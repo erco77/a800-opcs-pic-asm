@@ -47,9 +47,7 @@ ReadVels:
     ;     //IBMPC_IRQ = 0;        // No! Leave IRQ management to state machine
     ;     state     = 11;         // jump state machine into reading vels from PC
     ; } else {
-    ;     state     = state;      // NOP for IBMPC_ACK timing symmetry
     ;     //IBMPC_IRQ = 0;        // No! Leave IRQ management to state machine
-    ;     state     = state;      // NOP for timing symmetry
     ; }
 
     ; if ( is_svel_and_strobe ) { // START + STROBE from PC?
@@ -73,9 +71,7 @@ rv_svel_stb_SET:
                                      ;   |   -----
                                      ;   |    10
     ;    } else {
-    ;        state     = state;      // NOP for IBMPC_ACK timing symmetry
     ;        //IBMPC_IRQ = 0;        // No! Leave IRQ management to state machine
-    ;        state     = state;      // NOP for timing symmetry
     ;    }
     ;
 rv_svel_stb_CLR:                     ;   |     |
@@ -234,9 +230,7 @@ rv_case_0:
 
     ; if ( ! is_strobe ) {  // THROW AWAY EXTRA DATA: STROBE?
     ;     // Strobe lo? Keep ack low and wait for it to go high
-    ;     lsb       = lsb;          // NOP
-    ;     IBMPC_ACK = 0;            // NOP
-    ;     state    += 0;            // NOP
+    ;     // - do nothing -
     ; } else {
     ;     // Strobe hi? Read data, ACK, advance state to 'case 1'
     ;     lsb       = IBMPC_DATA;   // read lsb (ignore value read)
@@ -275,12 +269,9 @@ rv0_is_stb:
     ; case 1: // THROW AWAY EXTRA DATA: await ack
     ;     if ( is_strobe ) {
     ;         // Strobe still hi? Keep ACK hi and wait for it to go low, remain in state
-    ;         nop       = nop;          // NOP
     ;         IBMPC_ACK = 1;            // keep ACK set until strobe clears
-    ;         state    += 0;            // NOP
     ;     } else {
     ;         // Host lowered strobe? Un-ack, move back to case 0
-    ;         nop       = nop;          // NOP
     ;         IBMPC_ACK = 0;            // un-ack
     ;         state     = 0;            // go back to 'case 0'/keep tossing new data received
     ;     }
@@ -327,13 +318,10 @@ rv1_not_is_stb:
     ;
     ;   case 11: // ack Start
     ;       if ( ! is_svel_and_strobe ) { // check if host lowered STROBE and START
-    ;           nop       = nop;          // NOP
     ;           IBMPC_ACK = 0;            // un-ack
     ;           state    += 1;            // advance to next state
     ;       } else {
-    ;           nop       = nop;          // NOP
     ;           IBMPC_ACK = 1;            // keep ACK set until strobe/start clears
-    ;           state    += 0;            // NOP
     ;       }
     ;
 
@@ -377,9 +365,7 @@ rv11_is_stb:
 ; case 32:
 ; default: // final state: tell RunMotor() we have new data
 ;     if ( always_true ) {          // NOP - always true
-;         nop        = nop;         // NOP
 ;         G_got_vels = 1;           // flag vels were loaded
-;         IBMPC_ACK  = 0;           // NOP
 ;         state      = 0;           // jump state machine to 'case 0', ignoring all subsequent data until next SVEL
 ;     }
 
