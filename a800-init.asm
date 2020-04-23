@@ -1,3 +1,5 @@
+; vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; FUNCTION
@@ -6,7 +8,7 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 Init:
-    MOVLB	0x0F	; Bank for SFRs (Special Function Regs)
+    MOVLB       0x0F    ; Bank for SFRs (Special Function Regs)
 
     ; NOTE: in the following TRISA/B/C data direction registers,
     ;       '1' configures an input, '0' configures an output.

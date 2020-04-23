@@ -1,3 +1,5 @@
+; vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
+
     ;
     ;    #####
     ;    #    #
@@ -5,7 +7,7 @@
     ;    #    #
     ;    #    #
     ;    #####
-    ;   
+    ;
     ;   case 17: // await lsb chan 'B'
     ;       if ( is_strobe ) {            // STROBE from PC?
     ;           lsb       = IBMPC_DATA;
@@ -136,13 +138,13 @@ rv20_is_stb:
     return                              ; ----- -----
                                         ;   9     9   <-- execution symmetry
 
-    ; 
+    ;
     ; --- The following case simply moves the received data from lsb/msb
     ; --- to the arrays. We do this separately to distribute the execution
     ; --- time of array updates to prevent jitter in motor steps.
     ; --- This code assumes on entry:
-    ;         FSR0 -> vels[new_vix]
-    ;         FSR1 -> dirs[new_vix]
+    ;         FSR0 -> vels[G_new_vix], where lsb -> FSR0 (vels)
+    ;         FSR1 -> dirs[G_new_vix], where msb -> FSR1 (dirs)
 
     ;
     ; CASE 21
@@ -153,11 +155,11 @@ rv_case_21:
     nop                                 ;   1
     movlw       B_CHAN                  ;   1
 
-    addwf       FSR0L,1                 ;   1   ; FSR0 -> vels[new_vels][A]
-    movff       rv_lsb,INDF0            ;   2   ; lsb  -> vels[new_vels][A]
+    addwf       FSR0L,1                 ;   1   ; FSR0 -> vels[G_new_vix][A]
+    movff       rv_lsb,INDF0            ;   2   ; lsb  -> vels[G_new_vix][A]
 
-    addwf       FSR1L,1                 ;   1   ; FSR1 -> dirs[new_vels][A]
-    movff       rv_msb,INDF1            ;   2   ; msb  -> dirs[new_vels][A]
+    addwf       FSR1L,1                 ;   1   ; FSR1 -> dirs[G_new_vix][A]
+    movff       rv_msb,INDF1            ;   2   ; msb  -> dirs[G_new_vix][A]
 
     incf        rv_state                ;   1   ; Advance to next state
     return                              ; -----

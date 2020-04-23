@@ -1,3 +1,5 @@
+; vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
+
 ReadVelsRegression:
     ;
     ; Simulate data transmissions from IBMPC
@@ -12,15 +14,15 @@ ReadVelsRegression:
     ;
     banksel rv_state
     movlw   0x00
-    movwf   rv_state	; start in state 0
-    movlw   0x55	; IBMPC_DATA - this will be vel for A_CHAN
+    movwf   rv_state    ; start in state 0
+    movlw   0x55        ; IBMPC_DATA - this will be vel for A_CHAN
     movwf   G_portc
-    movlw   b'00000000'	; no strobe/no start
+    movlw   b'00000000' ; no strobe/no start
     movwf   G_porta
     call    ReadVels
     NOP    ; rv_state should be 0, waiting for SVEL+STB
 
-    movlw   b'00000101'	; SVEL+STB
+    movlw   b'00000101' ; SVEL+STB
     movwf   G_porta
     call    ReadVels
     NOP    ; rv_state should be 11/0B
@@ -28,47 +30,47 @@ ReadVelsRegression:
     call    ReadVels
     NOP    ; same
 
-    movlw   b'00000000'	; UN-SVEL/UN-STB
+    movlw   b'00000000' ; UN-SVEL/UN-STB
     movwf   G_porta
     call    ReadVels
-    NOP	    ; rv_state should be 12/0C
-    
-    movlw   b'00000001'	; STROBE PC DATA
+    NOP     ; rv_state should be 12/0C
+
+    movlw   b'00000001' ; STROBE PC DATA
     movwf   G_porta
     call    ReadVels
-    NOP	    ; lsb should be 55
-	    ; rv_state should be 13/0D
-	    
-    movlw   b'00000000'	; UN-STB
+    NOP     ; lsb should be 55
+            ; rv_state should be 13/0D
+        
+    movlw   b'00000000' ; UN-STB
     movwf   G_porta
     call    ReadVels
-    NOP	    ; rv_state should be 13/0d
-    
-    movlw   0x80	; IBMPC_DATA - this will be DIR for A_CHAN
+    NOP     ; rv_state should be 13/0d
+
+    movlw   0x80        ; IBMPC_DATA - this will be DIR for A_CHAN
     movwf   G_portc
-    movlw   b'00000000'	; UN-STB
+    movlw   b'00000000' ; UN-STB
     movwf   G_porta
     call    ReadVels
-    NOP	    ; rv_state should be 14/0e
-    
-    movlw   b'00000001'	; STROBE PC DATA
+    NOP     ; rv_state should be 14/0e
+
+    movlw   b'00000001' ; STROBE PC DATA
     movwf   G_porta
     call    ReadVels
-    NOP	    ; msb should now be 80
-	    ; rv_state should be 15/0f
-	    
+    NOP     ; msb should now be 80
+            ; rv_state should be 15/0f
+        
     call    ReadVels
-    NOP	    ; same
-    
-    movlw   b'00000000'	; UN-STB
+    NOP     ; same
+
+    movlw   b'00000000' ; UN-STB
     movwf   G_porta
     call    ReadVels
-    NOP	    ; rv_state should be 16/10
-    
+    NOP     ; rv_state should be 16/10
+
     call    ReadVels
-    NOP	    ; rv_state now 17
-	    ; vels[new_vix][0] should now be 55
-	    ; dirs[new_vix][0] should now be 80
+    NOP     ; rv_state now 17
+            ; vels[new_vix][0] should now be 55
+            ; dirs[new_vix][0] should now be 80
 
     goto    $
 

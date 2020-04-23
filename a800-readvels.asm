@@ -1,10 +1,10 @@
-
+; vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
 
 ; ReadVels()
 ReadVels:
 
-    ; Prepare FSR0 = vels[new_vix][0]
-    ;         FSR1 = dirs[new_vix][0]
+    ; Prepare FSR0 = vels[G_new_vix][0]
+    ;         FSR1 = dirs[G_new_vix][0]
     ;
     ; Load FSR0/FSR1 with ptr to head of vels/dirs array
     lfsr        FSR0,vels
@@ -12,26 +12,26 @@ ReadVels:
 
     ; Load WREG with offset to handle array[new_vels][chan] indexing.
     ; new_vels is either 0 or 1, so we translate this into a uchar offset
-    ; of either 0 or 4 (MAXCHANS). Let's assume FSR0/FSR1 point 
+    ; of either 0 or 4 (MAXCHANS). Let's assume FSR0/FSR1 point
     ; *within bank* to avoid 16 bit indexing, so just adjust FSR0L/1L
     ;
-    movlw       4               ; offset for FSR0/1 if run_vix == 1
-    btfsc       new_vix,0
-    addwf       FSR0L           ; FSR0 += 4 if run_vix set
-    btfsc       new_vix,0
-    addwf       FSR1L           ; FSR1 += 4 if run_vix set
+    movlw       4               ; offset for FSR0/1 if G_new_vix == 1
+    btfsc       G_new_vix,0
+    addwf       FSR0L           ; FSR0 += 4 if G_new_vix set
+    btfsc       G_new_vix,0
+    addwf       FSR1L           ; FSR1 += 4 if G_new_vix set
 
     ; is_strobe = IS_STROBE;    // where IS_STROBE is ((G_porta & 0b0001) == 0b0001)
-    ; 
+    ;
     clrf        rv_is_stb       ; assume unset
-    btfsc       G_porta,0       ; G_porta bit 0 set?
+    btfsc       G_porta,0       ; G_porta bit 0 set? (PORTA bit 0 is IBMPC_STROBE)
     setf        rv_is_stb       ; yes, ff -> rv_is_stb
 
     ; is_svel_stb = IS_SVEL_AND_STROBE;         // e.g ((G_porta & 0b0101) == 0b0101)
     ;
     ;    NOTE: PIC doesn't have a simple literal compare, so to test if both
     ;          bits are set, we use xor to flip the bits and test for zero flag.
-    ;          
+    ;
     clrf        rv_is_svel_stb  ; assume unset
     movf        G_porta,W       ; G_porta -> WREG
     andlw       b'00000101'     ; isolate bits 0+2: (STROBE_8255 and SVEL_8255)
@@ -64,7 +64,7 @@ rv_svel_stb_SET:
     nop  ; compensate no-skip btfs*  ;   |     1
     nop  ; compensate no-skip btfs*  ;   |     1
     ; IBMPC_ACK = 1;
-    bsf         IBMPC_ACK_BIT        ;   |     1    
+    bsf         IBMPC_ACK_BIT        ;   |     1
                                      ;   |     |
     ; state     = 11;                ;   |     |   // jump state machine into reading vels from PC
     movlw       .2    ; .11 now .2   ;   |     1
@@ -91,7 +91,7 @@ rv_state_machine:
     ; This is the state machine for receiving data from the IBMPC.
     ;
     ; At any given moment the IBMPC is either in the middle of sending data,
-    ; or is about to start, or has just finished. The 'rv_state' reflects 
+    ; or is about to start, or has just finished. The 'rv_state' reflects
     ; where in the transmit/receive process we are.
     ;
     ; Regardless of the state, the execution time MUST BE THE SAME,
@@ -124,7 +124,7 @@ rv_state_machine:
     ;  ----- -----  --------------------------------------------------------
     ;    0    0     Ack    \__ Receive data and toss it.
     ;    1    1     Unack  /   Handles data sent beyond 4 channels
-    ;  
+    ;
     ;   11    2     Entry point for "SVEL+STROBE". Initial handshake
     ;               handled by if () above state machine since it can happen
     ;               at any time, then enters here to begin receiving data.
@@ -153,9 +153,9 @@ rv_state_machine:
     ;   33    24    /                       /
     ;   34    25    \__ lsb+msb -> array   /
     ;   35    26    /                     /
-    ;   . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+    ;   . . . . . . . . . . . . . . . . . . . . . . . . . . .
     ;   36    27    Final state: tell RunMotor() we have new data:
-    ;               set 'got_vels', set state to back to '0'
+    ;               set 'G_got_vels', set state to back to '0'
     ;
 
     ;;;
@@ -171,7 +171,7 @@ rv_state_machine:
     rlncf   WREG,0,0            ; rotate left  \__ WREG *= 4
     rlncf   WREG,0,0            ; rotate left  /
     movwf   rv_state_x4,BANKED  ; save x4 result for actual PCL adjust below
-    
+
     ; Now do the math for the jump table that handles page boundaries..
     movlw   high (rv_jmp_table)
     movwf   PCLATH
@@ -189,13 +189,13 @@ rv_jmp_table:
     goto rv_case_11     ;   2   Entry point for "SVEL+STROBE". Initial handshake
     ;                   ;       handled by if () above state machine since it can happen
     ;                   ;       at any time, then enters here to begin receiving data.
-                            
+
     goto rv_case_12     ;   3   A CHAN lsb ack
     goto rv_case_13     ;   4   A CHAN lsb unack
     goto rv_case_14     ;   5   A CHAN msb ack
     goto rv_case_15     ;   6   A CHAN msb unack
     goto rv_case_16     ;   7   A CHAN lsb/msb -> vels/dirs array
-                            
+
     goto rv_case_17     ;   8   B CHAN lsb ack
     goto rv_case_18     ;   9   B CHAN lsb unack
     goto rv_case_19     ;   10  B CHAN msb ack
@@ -221,11 +221,11 @@ rv_jmp_table:
     ;  CASE 0
     ;
     ;  NOTE: CASE 0 AND 1 ARE SPECIAL:
-    ;  
+    ;
     ;      These 2 states receive data but just throw it away.
     ;      This allows host to send more channels than we support
     ;      without breaking anything.
-    ;  
+    ;
     ;      These states alternate handling strobe/ack until a START is
     ;      received, which jumps the state machine to case 11 to start
     ;      receiving actual data again.
@@ -371,16 +371,16 @@ rv11_is_stb:
 #include "a800-readvels-dchan.asm"
 
 ; // Final state of the state machine: all data received, flag that
-; // data was received (got_vels == 1) and move to state machine to
+; // data was received (G_got_vels == 1) and move to state machine to
 ; // jump to 'case 0' to accept and toss any extra channels of data.
 ;
 ; case 32:
 ; default: // final state: tell RunMotor() we have new data
 ;     if ( always_true ) {          // NOP - always true
-;         nop       = nop;          // NOP
-;         got_vels  = 1;            // flag vels were loaded
-;         IBMPC_ACK = 0;            // NOP
-;         state     = 0;            // jump state machine to 'case 0', ignoring all subsequent data until next SVEL
+;         nop        = nop;         // NOP
+;         G_got_vels = 1;           // flag vels were loaded
+;         IBMPC_ACK  = 0;           // NOP
+;         state      = 0;           // jump state machine to 'case 0', ignoring all subsequent data until next SVEL
 ;     }
 
     ;
@@ -394,7 +394,7 @@ rv_case_32:
     nop                           ;  1
     nop                           ;  1
     nop                           ;  1
-    setf        got_vels          ;  1  ; flag that ABCD vels/dirs were loaded
+    setf        G_got_vels        ;  1  ; flag that ABCD vels/dirs were loaded
     movlw       0                 ;  1  ; set state to zero to ignore any other
     movwf       rv_state          ;  1  ; chans received until SVEL|STB.
     nop                           ;  1  ; disable auto-advance of state
