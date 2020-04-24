@@ -40,7 +40,7 @@ ReadVelsRegression:
     call    ReadVels
     NOP     ; lsb should be 55
             ; rv_state should be 13/0D
-        
+
     movlw   b'00000000' ; UN-STB
     movwf   G_porta
     call    ReadVels
@@ -58,7 +58,7 @@ ReadVelsRegression:
     call    ReadVels
     NOP     ; msb should now be 80
             ; rv_state should be 15/0f
-        
+
     call    ReadVels
     NOP     ; same
 

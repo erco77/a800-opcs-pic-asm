@@ -87,24 +87,24 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 ; Port bit tied directly to IBMPC's IRQ: when set, triggers e.g. IRQ5 on IBMPC.
 ; Used to tell PC when it should begin sending us new velocities.
 ;
-#define IBMPC_IRQ_BIT   LATA,4  ; ",4" as in "bit #4" in bsf/bcf commands
+#define IBMPC_IRQ_BIT       LATA,4  ; ",4" as in "bit #4" in bsf/bcf commands
 
 ; Use LATA when writing to avoid read-modify-write problems
 ; during bit twiddling. See: https://www.microchip.com/forums/m332771.aspx
 ;
-#define IBMPC_ACK_BIT   LATA,1,C        ; PORTA bit 1
+#define IBMPC_ACK_BIT       LATA,1,C        ; PORTA bit 1
 
 ; Test IBMPC Strobe and SVEL (StartVel) bits
-#define IBMPC_STB_BITNUM        0               ; e.g. btfsc G_porta,IBMPC_STB_BITNUM
+#define IBMPC_STB_BITNUM    0               ; e.g. btfsc G_porta,IBMPC_STB_BITNUM
 #define IBMPC_STB_SVEL_BITS b'00000101' ; e.g. andlw IBMPC_STB_SVEL_BITS
 
 ; CPU1 Sync macro constants
-#define SET_SYNC        LATA,5  ; LATA  bit 5
-#define IS_ACK          PORTA,6 ; PORTA bit 6
+#define SET_SYNC            LATA,5  ; LATA bit 5
+#define IS_ACK              PORTA,6 ; PORTA bit 6
 
 ; CPU2 Sync macro constants
-#define SET_ACK         LATA,5  ; LATA  bit 5
-#define IS_SYNC         PORTA,6 ; PORTA bit 6
+#define SET_ACK             LATA,5  ; LATA bit 5
+#define IS_SYNC             PORTA,6 ; PORTA bit 6
 
 ; PIC outputs: stepper motor bits macro constants
 #define A_STEP_BIT          G_portb,0   ; A step is bit 0 of G_portb buffer
@@ -117,10 +117,10 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 #define D_DIR_BIT           G_portb,7   ; D dir  is bit 7 of G_portb buffer
 
 ; Motor channel indexing the arrays
-#define A_CHAN      0
-#define B_CHAN      1
-#define C_CHAN      2
-#define D_CHAN      3
+#define A_CHAN              0
+#define B_CHAN              1
+#define C_CHAN              2
+#define D_CHAN              3
 
 ;
 ; VARIABLES SECTION - Uninitialized data
@@ -143,19 +143,25 @@ G_freq          res 2           ; running 16bit main loop frequency counter
 G_porta         res 1           ; buffer for PORTA
 G_portb         res 1           ; buffer for PORTB
 G_portc         res 1           ; buffer for PORTC
-                
+
 ; Variables passed to Step() function (would be "function arguments")
 stp_arg_chan    res 1
 stp_arg_dir     res 1
 stp_arg_step    res 1
 
+; Variables used internally by SleepSec()
+slp_ctr0        res 1
+slp_ctr1        res 1
+
+; Variables used internally by CpuSync()
+cs_ctr          res 1           ; call counter
+
 ; Variables used internally by RunMotors()
 rm_chan         res 2           ; chan loop variable
-rm_run_vix_off  res 1           ; 0|4, depending on G_run_vix
 ;rm_fsr0        res 2           ; temp save for FSR0
 ;rm_fsr1        res 2           ; temp save for FSR1
 rm_fsr2         res 2           ; temp save for FSR2
-                
+
 ; Variables used internally by ReadVels()
 rv_state        res 1           ; state of recving data from IBMPC
 rv_state_x4     res 1           ; state * 4 for GOTO jump table indexing
@@ -175,17 +181,17 @@ rv_msb_dir      res 1           ; =1 if hi bit of msb set
 ; uchar dirs[2][MAXCHANS];       // 2x4 array of 8bit velocities sent from IBM PC
 vels            res (2*MAXCHANS)
 dirs            res (2*MAXCHANS)
-                
+
 ; Run index (either 0 or 1) for vels[] and dirs[] above:
 ;   vels[G_run_vix][chan], dirs[G_run_vix][chan]
 ;
 G_run_vix       res 1       ; 0|1 index for vels[ix][chan] and dirs[ix][chan]
 G_new_vix       res 1       ; index for new vels from IBMPC (opposite of G_run_vix's value)
-                
+
 ; Flag to indicate when PC has finished sending us new vels
 ; so next IRQ can swap G_run_vix/G_new_vix and start using new vels.
 G_got_vels      res 1       ; flag indicating if IBMPC finished sending us vels
-        
+
 ; 16 bit position array, one 16bit value per channel.
 ;
 ;     ushort pos[MAXCHANS];
@@ -200,7 +206,9 @@ pos             res (2*MAXCHANS)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; USEFUL MACROS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; go here
+;
+; No macros because we need careful per-instruction timing
+;
 
 RES_VECT  CODE    0x0000                ; processor reset vector
     GOTO    START                       ; go to beginning of program
@@ -214,6 +222,7 @@ MAIN_PROG CODE                          ; let linker place main program
     ;    very long code to scroll up + down through during development.
     ;
     #include "a800-init.asm"            ; defines Init(): Initializes the PIC hardware
+    #include "a800-sleep.asm"           ; defines SleepSec(): sleeps ~1 sec
     #include "a800-cpusync.asm"         ; defines CpuSync(): handshakes with the "other" PIC
     #include "a800-step.asm"            ; defines Step(chan,dir,val): sends a step pulse to a motor
     #include "a800-runmotors.asm"       ; defines RunMotors(): handles integer math to generate steps
@@ -224,11 +233,12 @@ MAIN_PROG CODE                          ; let linker place main program
 
 ; main()
 START:
-
     ; Init(); -- Initialize PIC hardware
     call    Init
 
-    ; Variables init
+    ;;
+    ;; Variables init
+    ;;
 
     ; G_portb = 0;
     banksel G_portb
@@ -264,6 +274,9 @@ START:
     lfsr  FSR2,pos
     movlw 0
 
+    ;;
+    ;; Variables needing a chan loop for initialization
+    ;;
 main_initpos_loop:
     ; zero out uchar vels[2][MAXCHANS]
     clrf   POSTINC0                 ; vels[0][chan] = 0;
@@ -279,17 +292,16 @@ main_initpos_loop:
     cpfseq G_maxchans               ; chan == MAXCHANS? skip if so
     goto   main_initpos_loop        ; loop if not
 
-    ; Sane vals for stp_xxx vars
+    ; cs_ctr = 0;
+    clrf    cs_ctr
+
+    ; Zero out Step() function arguments
     movlw 0
     movwf   stp_arg_chan
     movwf   stp_arg_dir
     movwf   stp_arg_step
 
-;;  ; TESTING
-;;  ; TESTING
-;;  ; TESTING
-;;
-;;  ; Some useful initial vels[]
+;;  ; Some useful initial vels[] during early r&d testing
 ;;  ;
 ;;  ; vels[0] = 0x10
 ;;  lfsr    FSR0,vels
@@ -312,12 +324,24 @@ main_initpos_loop:
 ;;
 ;;#include "a800-readvels-regression-test.asm"  ; starts running right here
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; blink:       ; blink at ~1sec rate
+;;    CLRWDT
+;;    BCF PORTB,0
+;;    call SleepSec
+;;    BSF PORTB,0
+;;    call SleepSec
+;;    goto blink
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    ; Wait a second so both processors are fully initialized before doing sync.
+    ; We don't want initialization noise to cause a false sync handshake.
+    call    SleepSec
+    call    CpuSync             ; sync both cpus /once/ before starting main loop
 
 main_loop:
     CLRWDT
 
-    ; CpuSync();        // SYNCHRONIZE PROCESSORS
-    call    CpuSync
+    ; call    CpuSync           ; [OLD] sync both cpus every iteration
 
     ; // Buffer ports with inputs
     ; G_porta = PORTA;     // port A is mix of in and out
@@ -341,11 +365,7 @@ main_loop:
 
     ; PORTB = G_portb.all; // apply accumulated step/dir bits all at once
     movff   G_portb, PORTB
-    goto    main_loop   ; FOREVEVER MAIN LOOP
-
-
-
-
+    goto    main_loop        ; FOREVEVER MAIN LOOP
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;    ;; TESTING ONLY -- ADD +1 TO A CHAN VEL EVERY IRQ
@@ -355,23 +375,5 @@ main_loop:
 ;;    incf    (vels+0),1
 ;;    goto    main_loop
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ; Square wave output for bit 0 of port B
-;; led_flash:
-;;    CLRWDT
-;;
-;;    BCF PORTB,0
-;;    BSF PORTB,0
-;;
-;;    BCF PORTB,0
-;;    BSF PORTB,0
-;;
-;;    BCF PORTB,0
-;;    BSF PORTB,0
-;;
-;;    BCF PORTB,0
-;;    BSF PORTB,0
-;;
-;;    GOTO led_flash
 
-    GOTO $                          ; loop forever - shouldn't get here
     END

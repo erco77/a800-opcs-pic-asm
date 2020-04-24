@@ -1,68 +1,46 @@
 ; vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; FUNCTION
-;     Synchronize the two A800 processors
+; Sync() - Synchronize the two A800 cpus
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 CpuSync:
 #if BUILD_CPU == 1
-    ;                           #
-    ;  ####   #####   #    #   ##
-    ; #    #  #    #  #    #  # #
-    ; #       #    #  #    #    #
+    ;
+    ;  ####   #####   #    #    #
+    ; #    #  #    #  #    #   ##
+    ; #       #    #  #    #  # #
     ; #       #####   #    #    #
     ; #    #  #       #    #    #
     ;  ####   #        ####   #####
     ;
-
-    ; // tell cpu2 we're syncing
-    ; SET_SYNC = 1;
-    bsf         SET_SYNC        ; set sync (LATA,5)
-
-    ; // Wait for cpu2 to ack sync
-    ; while ( !IS_ACK ) { }
+    bsf         SET_SYNC        ; tell cpu2 we're syncing: set sync (LATA,5)=1
 cs_loop1:
-    btfss       IS_ACK          ; Bit Test File, Skip If Set: (PORTA,6)==0?
-    goto        cs_loop1        ; clr? wait until set
-
-    ; // drop sync to cpu2 (which waits for this)
-    ; SET_SYNC = 0;
-    bcf         SET_SYNC        ; un-sync (LATA,5)
-
-    ; // Wait for cpu2 to un-ack
-    ; while ( IS_ACK ) { }
+    btfss       IS_ACK          ; Bit Test File, Skip If Set: (PORTA,6)==1?
+    bra         cs_loop1        ; clr? wait until set
+    bcf         SET_SYNC        ; un-sync (LATA,5)=0
 cs_loop2:
-    btfsc       IS_ACK          ; Bit Test File, Skip If Clear: (PORTA,6)==0?
-    goto        cs_loop2        ; set? wait until clear
+    btfsc       IS_ACK          ; Bit Test File, Skip If Clr: (PORTA,6)==0?
+    bra         cs_loop2        ; set? wait until clr
     return
-
 #else
-    ;                         #####
-    ;  ####   #####   #    # #     #
-    ; #    #  #    #  #    #       #
-    ; #       #    #  #    #  #####
-    ; #       #####   #    # #
-    ; #    #  #       #    # #
-    ;  ####   #        ####  #######
     ;
-    ; while (!IS_SYNC) { } // Wait for cpu1 to send us sync signal
+    ;  ####   #####   #    #   ####
+    ; #    #  #    #  #    #  #    #
+    ; #       #    #  #    #       #
+    ; #       #####   #    #   ####
+    ; #    #  #       #    #  #
+    ;  ####   #        ####   ######
 cs_loop1:
-    btfss       IS_SYNC         ; Bit Test File, Skip If Set: (PORTA,6)==1?
-    goto        cs_loop1        ; clr? wait until set
-
-    ; SET_ACK = 1; // ack sync signal
-    bsf         SET_ACK         ; ack (LATA,5) = 1
-
-    ; while (IS_SYNC) { } // wait for cpu1 to drop sync
+    btfss       IS_SYNC         ; Bit Test File, Skip If Set: (PORTA,6)==0?
+    bra         cs_loop1        ; clr? wait until set
+    bsf         SET_ACK         ; set? ack (LATA,5)=1
 cs_loop2:
-    btfsc       IS_SYNC         ; Bit Test File, Skip If Clear: (PORTA,6)==0?
-    goto        cs_loop2        ; set? wait until clear
-
-    ; SET_ACK = 0; // un-ack
+    btfsc       IS_SYNC         ; Bit Test File, Skip If Set: (PORTA,6)==0?
+    bra         cs_loop2        ; clr? wait until set
     bcf         SET_ACK         ; un-ack (LATA,5)=0
+    nop                         ; allow time for CPU1 to see ACK
     return
 #endif
-
-

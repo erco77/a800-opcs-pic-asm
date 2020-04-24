@@ -8,7 +8,7 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 Init:
-    MOVLB       0x0F    ; Bank for SFRs (Special Function Regs)
+    MOVLB  0x0F ; Bank for SFRs (Special Function Regs)
 
     ; NOTE: in the following TRISA/B/C data direction registers,
     ;       '1' configures an input, '0' configures an output.
@@ -36,6 +36,8 @@ Init:
     movwf   WPUA,   BANKED
     movlw   b'00000000'
     movwf   ODCONA, BANKED
+    movlw   0
+    movwf   PORTA,  BANKED      ; zero all PORTA outputs
 
     ; PORTB  = 0b00000000;
     ; TRISB  = 0b00000000; // data direction for port A (0=output, 1=input)
