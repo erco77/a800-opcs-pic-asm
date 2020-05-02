@@ -3,7 +3,7 @@
     list p=18F24Q10
 #include "a800-config.h"
 
-#define BUILD_CPU 1     ; *** SET MANUALLY: 1 for CPU1, 2 for CPU2 ***
+#define BUILD_CPU 2     ; *** SET MANUALLY: 1 for CPU1, 2 for CPU2 ***
 
 MAXFREQ     equ .256    ; max frequency count for main iters (512)
 MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
@@ -363,6 +363,35 @@ main_loop:
 
     ; // Clear the step bits here, so they had time to stay high
     ; PORTB |= 0b01010101; // force step bits only, leave dir bits unchanged
+
+    ; Goal: change 4uS step width to 5uS. Without nops, step width
+    ;       is currently 4uS. Would be better if it were 5uS. So:
+    ;
+    ; 16 nops == 1uS, because: we have a 16MHz instruction clock (64Mhz/4):
+    ;
+    ;    16MHz = 16000000 = 1e6
+    ;    1 nop = 1 cycle = 16MHz = 1/16MHz = 1/1e6 = 0.0000000625 = .062uS
+    ;    16 x .062uS = 1uS
+    nop
+    nop
+    nop
+    nop     ; 4 (.25uS)
+
+    nop
+    nop
+    nop
+    nop     ; 8 (.50uS)
+
+    nop
+    nop
+    nop
+    nop     ; 12 (.75uS)
+
+    nop
+    nop
+    nop
+    nop     ; 16 (1.0uS)
+
     movf    LATB,W
     iorlw   b'01010101'
     movwf   PORTB
