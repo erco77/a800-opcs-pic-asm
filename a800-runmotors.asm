@@ -4,6 +4,7 @@
 ; Run Motors by changing the step/dir bits
 ;
 RunMotors:
+    ; // Initialize pointer variables
     ; uchar *vp = &vels[G_run_vix][0];
     ; uchar *dp = &dirs[G_run_vix][0];
     ; uchar *p  = &pos[0];
@@ -43,50 +44,53 @@ rm_chan_loop:           ; for loop
     movff FSR2L,rm_fsr2+0
     movff FSR2H,rm_fsr2+1
 
-    ; if ( G_freq == 0 ) { pos[c]  = vels[G_run_vix][c]; }
+    ; if ( G_freq == 0 ) { pos[c]  = MAXFREQ/2; }		// full iter of chan loop?
     ; else               { pos[c] += vels[G_run_vix][c]; }
     ;
 
     ; See if 16bit G_freq is zero.
     ;    Check if both bytes are 0 by OR'ing them together.
     ;
-    movlw  0                    ; 0 -> W
-    iorwf  G_freq+0,0,1         ; logical OR bits from G_freq
-    iorwf  G_freq+1,0,1         ; ..and G_freq+1
+    movlw  0                     ; 0 -> W
+    iorwf  G_freq+0,0,1          ; logical OR bits from G_freq
+    iorwf  G_freq+1,0,1          ; ..and G_freq+1
 
-    ;                           ; NOSKIP SKIP?
-    ;                           ; -----  -----
-    tstfsz WREG                 ;   1      3  ; Test + Skip If Zero. if W==0: both bytes of G_freq are 0
-    goto   rm_G_freq_nz         ;   2      |  ; W != 0? G_freq is non-zero
-    goto   rm_G_freq_zr         ;   |      2  ; W == 0? G_freq is zero
+    ;                            ; NOSKIP SKIP?
+    ;                            ; -----  -----
+    tstfsz WREG                  ;   1      3  ; Test + Skip If Zero. if W==0: both bytes of G_freq are 0
+    goto   rm_G_freq_nz          ;   2      |  ; W != 0? G_freq is non-zero
+    goto   rm_G_freq_zr          ;   |      2  ; W == 0? G_freq is zero
 
 rm_G_freq_zr:
-    ; { pos[chan]  = vels[G_run_vix][chan]; }
-    movff  INDF0,POSTINC2       ;   |      3  ; pos[LO] = vels[chan]  (NOTE: INDF01 doesn't increment)
-    clrf   POSTINC2             ;   |      1  ; pos[HI] = 0
-    goto rm_G_freq_restore      ;   |      2
-    ;                           ;   |    -----
-    ;                           ;   |      11
+    ; { pos[chan] = G_maxfreq2; }
+    ;                                          ; _
+    movff  G_maxfreq2+0,POSTINC2 ;   |      3  ;  |_ pos[chan] = (MAXFREQ/2);
+    movff  G_maxfreq2+1,POSTINC2 ;   |      3  ; _|
+    goto rm_G_freq_restore       ;   |      2
+    ;                            ;   |    -----
+    ;                            ;   |      13
 
 rm_G_freq_nz:
-    nop                         ;   1      |
-    nop                         ;   1      |
+    nop                          ;   1      |
+    nop                          ;   1      |
     ; { pos[chan] += vels[G_run_vix][chan]; }
-    movf   INDF0,0              ;   1      |  ; vel[lsb] -> W  (NOTE: INDF0 doesn't increment)
-    addwf  POSTINC2,1           ;   1      |  ; w + pos[chan] -> pos[chan]
-    clrf   WREG                 ;   1      |
-    addwfc POSTINC2,1           ;   1      |  ; carry -> pos[chan] (",1": result->pos, ",1": use BSR)
-    goto rm_G_freq_restore      ;   2      |
-    ;                           ; -----  -----
-    ;                           ;   11     11   <-- symmetry
+    movf   INDF0,0               ;   1      |  ; vel[lsb] -> W  (NOTE: INDF0 doesn't increment)
+    addwf  POSTINC2,1            ;   1      |  ; w + pos[chan] -> pos[chan]
+    clrf   WREG                  ;   1      |
+    addwfc POSTINC2,1            ;   1      |  ; carry -> pos[chan] (",1": result->pos, ",1": use BSR)
+    nop                          ;   1      |
+    nop                          ;   1      |
+    goto rm_G_freq_restore       ;   2      |
+    ;                            ; -----  -----
+    ;                            ;   13     13   <-- symmetry
 
 rm_G_freq_restore:
     ; restore FSR2
     movff  rm_fsr2+0,FSR2L
-    movff  rm_fsr2+1,FSR2H ; probably unnecessary
+    movff  rm_fsr2+1,FSR2H
 
 ; if ( pos[chan] >= MAXFREQ ) { Step(chan, dir, 1); pos[chan] -= MAXFREQ; } // step
-; else                        { Step(chan, dir, 0); pos[chan] -= 0;      }  // unstep
+; else                        { Step(chan, dir, 0);                      }  // unstep
 ;
     ; if (pos[chan] >= MAXFREQ)
     ; 16bit compare GTE
@@ -121,7 +125,7 @@ rm_maxfreq_nocar:             ;  \|/    |
 rm_maxfreq_cardone:
     ; (restore FSR2, carry unaffected)
     movff  rm_fsr2+0,FSR2L
-    movff  rm_fsr2+1,FSR2H ; probably unnecessary
+    movff  rm_fsr2+1,FSR2H
 
     ;                             ; -- Cycles --
     ; carry set if 1st >= 2nd     ;  CAR  NOCAR
@@ -149,7 +153,7 @@ rm_maxfreq_gte:                   ;  |      |
                                   ; -----   |
                                   ;  19     |
 rm_maxfreq_lt:                    ;  |      |
-    ; Step(0,dir,0); pos[chan]-=0;;  |      |
+    ; Step(0,dir,0);              ;  |      |
     movff rm_chan,stp_arg_chan    ;  |      2   ; rm_chan -> stp_arg_chan
     movff INDF1,stp_arg_dir       ;  |      2   ; dir[G_run_vix][0] -> stp_arg_dir  (NOTE: INDF1 doesn't increment)
     movlw 0                       ;  |      1   ; UN-STEP
@@ -168,14 +172,9 @@ rm_maxfreq_lt:                    ;  |      |
                                   ;  19    19
 
 rm_maxfreq_done:
-    ; (restore FSR2 which we mess with above)
-    ; OPTIMIZATION NOTE:
-    ;     We can probably just leave FSR2 modified, since it's already +2
-    ;     due to the above code. In which case we can simply leave it, and
-    ;     skip doing the two "incf FSR2L" operations.
-    ;
+    ; Restore FSR2 which we mess with above..
     movff  rm_fsr2+0,FSR2L
-    movff  rm_fsr2+1,FSR2H      ; probably unnecessary
+    movff  rm_fsr2+1,FSR2H
 
     ; Advance FSR0 vel[]  ptr (8 bit/1 byte)
     ; Advance FSR1 dirs[] ptr (8 bit/1 byte)

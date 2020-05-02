@@ -3,9 +3,9 @@
     list p=18F24Q10
 #include "a800-config.h"
 
-#define BUILD_CPU 2     ; *** SET MANUALLY: 1 for CPU1, 2 for CPU2 ***
+#define BUILD_CPU 1     ; *** SET MANUALLY: 1 for CPU1, 2 for CPU2 ***
 
-MAXFREQ     equ .512    ; max frequency count for main iters (512)
+MAXFREQ     equ .256    ; max frequency count for main iters (512)
 MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -131,6 +131,7 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 ;
 my_vars         udata 0x80      ; unitialized data (we init in main)
 G_maxfreq       res 2           ; MAXFREQ as a memory constant (for SUBWF)
+G_maxfreq2      res 2           ; MAXFREQ divided by 2 (used to init pos[] each iter)
 G_maxchans      res 1           ; MAXCHANS as a memory constant (for CPFwhatever)
 G_freq          res 2           ; running 16bit main loop frequency counter
 
@@ -250,6 +251,12 @@ START:
     movlw   high MAXFREQ
     movwf   G_maxfreq+1
 
+    ; G_maxfreq2 = (MAXFREQ/2);
+    movlw   low (MAXFREQ/2)
+    movwf   G_maxfreq2+0
+    movlw   high (MAXFREQ/2)
+    movwf   G_maxfreq2+1
+
     ; G_maxchans = MAXCHANS;
     movlw   MAXCHANS
     movwf   G_maxchans
@@ -268,7 +275,7 @@ START:
     ; G_got_vels = 0;
     clrf    G_got_vels
 
-    ; for ( c=0; c<MAXCHANS; c++ ) { vels[0] = 0; dirs[0] = 0; pos[c] = 0; }
+    ; for ( c=0; c<MAXCHANS; c++ ) { vels[0] = 0; dirs[0] = 0; pos[c] = (MAXFREQ/2); }
     lfsr  FSR0,vels
     lfsr  FSR1,dirs
     lfsr  FSR2,pos
@@ -279,24 +286,24 @@ START:
     ;;
 main_initpos_loop:
     ; zero out uchar vels[2][MAXCHANS]
-    clrf   POSTINC0                 ; vels[0][chan] = 0;
-    clrf   POSTINC0                 ; (do it again since vels is a 2D array)
+    clrf    POSTINC0                 ; vels[0][chan] = 0;
+    clrf    POSTINC0                 ; (do it again since vels is a 2D array)
     ; zero out uchar dirs[2][MAXCHANS]
-    clrf   POSTINC1                 ; dirs[0][chan] = 0;
-    clrf   POSTINC1                 ; (do it again since dirs is a 2D array)
-    ; zero out ushort pos[MAXCHANS] ; _
-    clrf   POSTINC2                 ;  |_ pos[chan] = 0;   (FSR2) fsr2 += 2 (16bit ushort)
-    clrf   POSTINC2                 ; _|
+    clrf    POSTINC1                 ; dirs[0][chan] = 0;
+    clrf    POSTINC1                 ; (do it again since dirs is a 2D array)
+    ; Init ushort pos[*][chan]       ; _
+    movff   G_maxfreq2+0, POSTINC2   ;  |_ pos[chan] = (MAXFREQ/2);
+    movff   G_maxfreq2+1, POSTINC2   ; _|
 
-    incf   WREG                     ; chan++
-    cpfseq G_maxchans               ; chan == MAXCHANS? skip if so
-    goto   main_initpos_loop        ; loop if not
+    incf    WREG                     ; chan++
+    cpfseq  G_maxchans               ; chan == MAXCHANS? skip if so
+    goto    main_initpos_loop        ; loop if not
 
     ; cs_ctr = 0;
     clrf    cs_ctr
 
     ; Zero out Step() function arguments
-    movlw 0
+    movlw   0
     movwf   stp_arg_chan
     movwf   stp_arg_dir
     movwf   stp_arg_step
@@ -349,6 +356,7 @@ main_loop:
 
     ; G_portc = PORTC;     // port C is all inputs
     movff   PORTC,G_portc
+
 
     ; ReadVels();
     call    ReadVels
