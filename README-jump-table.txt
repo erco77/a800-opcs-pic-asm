@@ -29,19 +29,20 @@
     ;   If the table straddles a page boundary, the following code is recommended:
     ;   (See: https://www.microchip.com/forums/m452263.aspx )
     ;
-    ;	    movlw high Table
-    ;	    movwf PCLATH
-    ;	    movlw low Table
     ;	    banksel index
-    ;	    addwf index, W
-    ;	    btfsc STATUS, C
-    ;       incf PCLATH, F
-    ;	    movwf PCL
-    ;	 Table
-    ;	    goto l1
-    ;	    goto l2
-    ;	    goto l3
-    ;	    goto l4
+    ;	    movlw   high my_Table
+    ;	    movwf   PCLATH
+    ;	    movlw   low my_Table
+    ;	    addwf   index, W		; Value of 'index' indicates which Func_X to run
+    ;	    btfsc   STATUS, C
+    ;       incf    PCLATH, F
+    ;	    movwf   PCL
+    ;	 my_table:
+    ;	    goto    Func_0
+    ;	    goto    Func_1
+    ;	    goto    Func_2
+    ;	    goto    Func_3
+    ;       :
     ;
     ;================ THIS WORKS TOO, BUT ONLY IF NOT NEAR PAGE BOUNDARY =======
     ;    movlw   high (jmp_table)
