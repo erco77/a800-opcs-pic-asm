@@ -5,7 +5,13 @@
 
 #define BUILD_CPU 2     ; *** SET MANUALLY: 1 for CPU1, 2 for CPU2 ***
 
-MAXFREQ     equ .256    ; max frequency count for main iters (512)
+; MAXFREQ   IRQ RATE
+; -------   --------
+; .512      62 Hz
+; .300      106.7 Hz
+; .256      122 Hz
+;
+MAXFREQ     equ .300    ; max frequency count for main iters (300)
 MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -87,24 +93,24 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 ; Port bit tied directly to IBMPC's IRQ: when set, triggers e.g. IRQ5 on IBMPC.
 ; Used to tell PC when it should begin sending us new velocities.
 ;
-#define IBMPC_IRQ_BIT       LATA,4  ; ",4" as in "bit #4" in bsf/bcf commands
+#define IBMPC_IRQ_BIT       LATA,4      ; ",4" as in "bit #4" in bsf/bcf commands
 
 ; Use LATA when writing to avoid read-modify-write problems
 ; during bit twiddling. See: https://www.microchip.com/forums/m332771.aspx
 ;
-#define IBMPC_ACK_BIT       LATA,1,C        ; PORTA bit 1
+#define IBMPC_ACK_BIT       LATA,1,C    ; PORTA bit 1
 
 ; Test IBMPC Strobe and SVEL (StartVel) bits
-#define IBMPC_STB_BITNUM    0               ; e.g. btfsc G_porta,IBMPC_STB_BITNUM
-#define IBMPC_STB_SVEL_BITS b'00000101' ; e.g. andlw IBMPC_STB_SVEL_BITS
+#define IBMPC_STB_BIT       0           ; e.g. btfsc G_porta,IBMPC_STB_BITNUM
+#define IBMPC_STB_SVEL_MASK b'00000101' ; e.g. andlw IBMPC_STB_SVEL_BITS
 
 ; CPU1 Sync macro constants
-#define SET_SYNC            LATA,5  ; LATA bit 5
-#define IS_ACK              PORTA,6 ; PORTA bit 6
+#define SET_SYNC            LATA,5      ; LATA bit 5
+#define IS_ACK              PORTA,6     ; PORTA bit 6
 
 ; CPU2 Sync macro constants
-#define SET_ACK             LATA,5  ; LATA bit 5
-#define IS_SYNC             PORTA,6 ; PORTA bit 6
+#define SET_ACK             LATA,5      ; LATA bit 5
+#define IS_SYNC             PORTA,6     ; PORTA bit 6
 
 ; PIC outputs: stepper motor bits macro constants
 #define A_STEP_BIT          G_portb,0   ; A step is bit 0 of G_portb buffer
@@ -363,34 +369,6 @@ main_loop:
 
     ; // Clear the step bits here, so they had time to stay high
     ; PORTB |= 0b01010101; // force step bits only, leave dir bits unchanged
-
-    ; Goal: change 4uS step width to 5uS. Without nops, step width
-    ;       is currently 4uS. Would be better if it were 5uS. So:
-    ;
-    ; 16 nops == 1uS, because: we have a 16MHz instruction clock (64Mhz/4):
-    ;
-    ;    16MHz = 16000000 = 1e6
-    ;    1 nop = 1 cycle = 16MHz = 1/16MHz = 1/1e6 = 0.0000000625 = .062uS
-    ;    16 x .062uS = 1uS
-    nop
-    nop
-    nop
-    nop     ; 4 (.25uS)
-
-    nop
-    nop
-    nop
-    nop     ; 8 (.50uS)
-
-    nop
-    nop
-    nop
-    nop     ; 12 (.75uS)
-
-    nop
-    nop
-    nop
-    nop     ; 16 (1.0uS)
 
     movf    LATB,W
     iorlw   b'01010101'
