@@ -97,4 +97,117 @@ give a breadcrumb trail to remind of the processes used:
 				
 THE DEBUGGER FOR ASSEMBLY LANGUAGE
 ----------------------------------
+    OK, the MPLABX debugger is pretty amazing.
+
+    You can watch all the registers and variables, and either "single step" through
+    the code, or go to a position, and then run to the cursor to run a whole section
+    of code.
+
+    There's also the "Stopwatch" feature, which lets you count the #clock cycles executed
+    between start and end, which was incredibly useful for making sure the various IF
+    conditions in the code all executed in the same number of clock cycles, which was
+    super important for this project.
+
+    Usage:
+
+        o First open the "a800-opcs-asm" project, bring up the source file
+	  of the same name, which is the 'main' code.
+
+	o To run in the simulator, you have to change from using the programmer
+	  (PicKit4) to the simulator:
+
+	      > Right click on the project in the "Projects" side window
+	        and choose "Properties" to open the dialog
+
+	      > Under "Categories", click "Conf:[default]" to show the
+	        "Configuration" screen. 
+
+		In the "Hardware Tool:" browser, "PICkit 4" is probably selected.
+		
+		Change this, selecting "Simulator" instead.
+
+		Hit Apply/OK
+
+	o Optionally set a breakpoint in the code that's in main() somewhere
+	  after the hardware init is done (e.g. the call to Init())
+
+	o Now click "Debug -> Debug main project"
+	  This will "compile" and run the simulator in the debugger mode.
+
+	o When the program is running in the debugger, the red "STOP" and orange "PAUSE"
+	  buttons will activate.
+
+	  If a breakpoint is set, the debugger will pause automatically.
+
+	  If no breakpoint was set, the code will run forever; push PAUSE 
+	  to stop the simulation. It will stop you somewhere in the code.
+
+	o Assuming you set a breakpoint, and want to time the number of cycles
+	  between two points in the code:
+
+	     > First make sure "Stopwatch" is enabled; choose:
+
+	         Window -> Debugging -> Stopwatch
+
+	       Stopwatch will either show you accumulated time, or
+	       the time between executions. You probably want the latter,
+	       so make sure in the "Stopwatch" window the "Reset stopwatch on Run"
+	       is set.
+	  
+	     > Click on the instruction you want to start running from
+	       and hit "Set PC At Cursor". That will be the starting point.
+
+	     > Click on the instruction you want to stop at, and click
+	       "Run to cursor"
+
+	     > The simulator will run between the two points, and when
+	       it stops, Stopwatch will show the execution time in 
+	       instruction cycles.
+
+WATCHING VARIABLES
+------------------
+    To watch variables, choose:
+
+	Window -> Debugging -> Variables
+
+    ..to show the window with the list of variables you're watching, if any.
+    To add new variables to watch, either click the "+Diamond" icon, or right
+    click on the window and choose "New Watch".
+
+    It'll prompt for the variable name, or let you choose from a big list
+    of global symbols.
+
+    To delete watches, you can highlight a bunch and use Right Click -> "Delete".
+
+    You can watch registers, since they're just like variables, they have
+    a memory location.
+
+    For variables, you have to tell the watcher how large the variable is,
+    otherwise it assumes 1 byte. Under the "Type" column you can change the
+    size by selecting the variable, right click and choose:
+
+	    "User Defined Size" -> 16 bits, 32 bits, etc.
+
+    You can also change how it shows the value, in either hex or decimal
+    or binary or as an ascii character. For that, right click and choose:
+
+	    "Display Value Column As" -> Character/Hex/Decimal/etc.
+
+LEAVING DEBUG MODE
+------------------
+
+    Hit the STOP button or choose Debug -> Finish Debugger Session.
+
+RETURNING TO PROGRAMMING CHIPS
+------------------------------
+
+    When done with the simulator, be sure to switch back to using the
+    PicKit4:
+
+    	> Right-click on the project, choose Properties to open the dialog
+	> Under the "Categories" choose "Conf:[default]"
+	> Under Configuration, choose "PICkit4"
+	> hit Apply/OK.
+
+
 
