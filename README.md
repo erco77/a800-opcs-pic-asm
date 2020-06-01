@@ -1,3 +1,4 @@
+# vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
 # a800-opcs-pic-asm
 
 PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
@@ -94,12 +95,12 @@ PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
      |_________|   :                            `--> PIC CPU2 -----:--> Motor E steps
                    :                                           |---:--> Motor E direction
                    :                                           |---:--> Motor F steps
-	           :                                           |---:--> Motor F direction
-	           :                                           |---:--> Motor G steps
-	           :                                           |---:--> Motor G direction
-	           :                                           |---:--> Motor H steps
-		   :                                           `---:--> Motor H direction
-		   :                                               :
+                   :                                           |---:--> Motor F direction
+                   :                                           |---:--> Motor G steps
+                   :                                           |---:--> Motor G direction
+                   :                                           |---:--> Motor H steps
+                   :                                           `---:--> Motor H direction
+                   :                                               :
                    :...............................................:
 
 
@@ -120,25 +121,25 @@ PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
     on receipt of the first IRQ, the PC might send:
 
          5 to channel A
-	 5 to channel B
-	 0 to channel C
-	 0 to channel D
-	 :
-	 : etc
-	 :
-	 0 to channel H
+         5 to channel B
+         0 to channel C
+         0 to channel D
+         :
+         : etc
+         :
+         0 to channel H
 
     Then 1/50th of a second later, the A800 board will send another interrupt,
     which will feed the above 5 vel to channel A and B, and zeroes to C-H, and
     the PC will send the next 8 velocities, e.g. a little faster:
 
          10 to channel A
-	 10 to channel B
-	 0  to channel C
-	 :
-	 : etc
-	 :
-	 0  to channel H
+         10 to channel B
+         0  to channel C
+         :
+         : etc
+         :
+         0  to channel H
 
     In this way, precise motor ramping and positioning is possible over time.
     All the software has to do is keep the velocities coming each time an
@@ -162,4 +163,30 @@ PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
     if the executable is running at a high enough priority and has memory
     pages locked down to prevent it being swapped out by another process
     hogging memory. 
+
+MISC
+----
+    These links were useful to have open at all times during development:
+
+    PIC 18F Instruction Set in HTML
+    -------------------------------
+    http://technology.niagarac.on.ca/staff/mboldin/18F_Instruction_Set/
+    ..this is an HTML-ized version of the PIC 18F instruction set PDF.
+
+    Also: https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119448457.app4
+    In the data sheet, there's a chapter on the instruction set (below PDF's,
+    in Chapter 36).
+
+    PIC 18F24Q10 Data Sheet
+    -----------------------
+    "PIC18F24/25Q10 28-Pin, Low-Power, High-Performance Microcontrollers"
+    See Chapter 36 for the instruction set.
+    REV B: http://ww1.microchip.com/downloads/en/DeviceDoc/PIC18F24-25Q10-Data-Sheet-DS40001945B.pdf
+    REV C: http://ww1.microchip.com/downloads/en/DeviceDoc/PIC18F2425Q10-28-Pin-Low-Power-High-Performance-MCU-40001945C.pdf
+
+    PIC Assembler
+    -------------
+    "MPASM Assembler, MPLINK Object Linker, (etc) User's Guide"
+    http://ww1.microchip.com/downloads/en/DeviceDoc/33014L.pdf
+    ..useful stuff on the assembler; how to write macros, etc.
 
