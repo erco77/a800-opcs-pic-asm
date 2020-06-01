@@ -24,7 +24,7 @@ Init:
     ;         | _______ A6 CPU1_ACK   (in)  This is an input, regardless of which CPU# we're built for
     ;         || ______ A5 CPU1_SYNC  (out) This is an output, regardess of which CPU# we're built for
     ;         ||| _____ A4 IRQ_IBMPC  (out)
-    ;         |||| ____ A3 SMOT_8255  (in)
+    ;         |||| ____ A3 CPUID_8255 (in)
     ;         ||||| ___ A2 SVEL_8255  (in)
     ;         |||||| __ A1 ACK_8255   (out)
     ;         ||||||| _ A0 STB_8255   (in)

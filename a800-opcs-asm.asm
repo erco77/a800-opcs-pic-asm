@@ -22,7 +22,7 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 ;;   2   STB_8255-> RA0  |      | RB6 ->(ICSPCLK) D-Step   27   #    2   " "  RA0  |      | RB6 (ICSPCLK) H-Step   27
 ;;   3   <-ACK_8255 RA1  |      | RB5 ->C-Dir              26   #    3   " "  RA1  |      | RB5 G-Dir              26
 ;;   4  SVEL_8255-> RA2  |      | RB4 ->C-Step             25   #    4   " "  RA2  |      | RB4 G-Step             25
-;;   5  SMOT_8255-> RA3  |      | RB3 ->B-Dir              24   #    5   " "  RA3  |      | RB3 F-Dir              24
+;;   5 CPUID_8255-> RA3  |      | RB3 ->B-Dir              24   #    5   " "  RA3  |      | RB3 F-Dir              24
 ;;   6  <-IRQ_IBMPC RA4  |      | RB2 ->B-Step             23   #    6   " "  RA4  |      | RB2 F-Step             23
 ;;   7  <-CPU1 SYNC RA5  |      | RB1 ->A-Dir              22   #    7   " "  RA5  |      | RB1 E-Dir              22
 ;;   8        (VSS) GND  |      | RB0 ->A-Step             21   #    8   " "  GND  |      | RB0 E-Step             21
