@@ -109,18 +109,18 @@ rm_G_freq_restore:
 rm_maxfreq_car:               ;   |    \|/
     movf   G_maxfreq+1,w      ;   |     1
     subwf  POSTINC2,w         ;   |     1
-    goto   rm_maxfreq_cardone ;   |     1
+    goto   rm_maxfreq_cardone ;   |     2
                               ;   |   ------
-                              ;   |     10
+                              ;   |     11
                               ;   |     |
 rm_maxfreq_nocar:             ;  \|/    |
     nop  ; comp for abv btfss ;   1     |
     nop  ; comp for abv btfss ;   1     |
     nop                       ;   1     |
     nop                       ;   1     |
-    goto   rm_maxfreq_cardone ;   1    \|/
+    goto   rm_maxfreq_cardone ;   2    \|/
                               ; ----- ------
-                              ;   10    10
+                              ;   11    11
 
 rm_maxfreq_cardone:
     ; (restore FSR2, carry unaffected)
