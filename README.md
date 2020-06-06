@@ -9,7 +9,7 @@
     The Seriss Corporation OPCS (Optical Printer Control System) A800 board
     is an ISA motion control card for the IBM PC. It can manage up to 8
     stepper motors using 8 bit velocities for motor stepping rates from
-    57 Hz to 12,800 Hz.
+    107 Hz to 27,285 Hz.
 
     OPCS is commercial software. However, the stepper motor board itself
     (PCB design), the board's PIC chip firmware (this code here), and
