@@ -1,7 +1,8 @@
-<!-- vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4 -->
-<!-- a800-opcs-pic-asm -->
+<!-- vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
+     a800-opcs-pic-asm
+-->
 
-PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
+# PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
 
     What is this project?
     ---------------------
@@ -11,7 +12,7 @@ PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
     57 Hz to 12,800 Hz.
 
     OPCS is commercial software. However, the stepper motor board itself
-    (PCB design), the board's PIC chip firmware (this code here), and 
+    (PCB design), the board's PIC chip firmware (this code here), and
     related device drivers (A800DRV.ASM) will all be open source, so that
     other programs can be written to control motors with this board, and
     the board can be freely printed and used by others interested in doing
@@ -20,7 +21,7 @@ PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
     What does one do with this code?
     --------------------------------
     The assembly files here are meant to be brought into Microchip's
-    free MPLABX (v.5.25) IDE environment for programming PIC chips 
+    free MPLABX (v.5.25) IDE environment for programming PIC chips
     in either C or PIC assembly.
 
     In this case the code here is intended for the PIC assembler (MPASM 5.84),
@@ -38,7 +39,7 @@ PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
     What's a PIC chip?
     ------------------
     The PIC chips are single chip computers that have their own flash memory,
-    static memory, and are basically programmable I/O pins. 
+    static memory, and are basically programmable I/O pins.
 
     The chips used for this project are the PIC18F24Q10, a 28 pin through-hole
     chip that can run at 64MHz either with its own internal clock, or by an
@@ -68,7 +69,7 @@ PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
     ----------------------------------------------
     For micro stepping drives that run motors using 2000 pulses per revolution,
     this means motor speeds range in RPS (Revs Per second) from .02 RPS to 6.3 RPS,
-    or a top speed of 1 full rotation every 0.15 seconds. (Speeds slower than 
+    or a top speed of 1 full rotation every 0.15 seconds. (Speeds slower than
     .02 RPS can be achieved by sending a velocity of 1 followed by any value
     delay, so really there's no slow speed limit.)
 
@@ -78,30 +79,29 @@ PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
     stepper motor drivers like the Gecko 201X and Centent CNO-142/143.
 
 
-       IBMP PC                     OPCS A800 ISA CARD
-      _________    .................................................
-     |         |   :                                               :
-     |    IRQ5 |<-------------------------------------.            :
-     |         |   :                                  |            :
-     |         |   :        8255 PPI            ,--> PIC CPU1 -----:--> Motor A steps    
-     |         |   :    ___________________     |              |---:--> Motor A direction
-     |         |   :   |                   |    |              |---:--> Motor B steps    
-     |   0x300 |---:-> | 0x0300    PORT A  |----|              |---:--> Motor B direction
-     |   0x301 |---:-> | 0x0301    PORT B  |----|              |---:--> Motor C steps    
-     |   0x302 |---:-> | 0x0302    PORT C  |----|              |---:--> Motor C direction
-     |   0x303 |---:-> | 0x0303 CTRL WORD  |    |              |---:--> Motor D steps    
-     |         |   :   |                   |    |              `---:--> Motor D direction
-     |         |   :   |___________________|    |                  :
-     |_________|   :                            `--> PIC CPU2 -----:--> Motor E steps
-                   :                                           |---:--> Motor E direction
-                   :                                           |---:--> Motor F steps
-                   :                                           |---:--> Motor F direction
-                   :                                           |---:--> Motor G steps
-                   :                                           |---:--> Motor G direction
-                   :                                           |---:--> Motor H steps
-                   :                                           `---:--> Motor H direction
-                   :                                               :
-                   :...............................................:
+       IBMP PC                      OPCS A800 ISA CARD
+      _________    #######################################################
+     |         |   #                                                     #
+     |         |   #                                                     #
+     |         |   #                                                 ,---#--> Motor A steps
+     |    IRQ5 |<--#----------------------------------------.        |---#--> Motor A dir
+     |         |   #                                   _____|____    |---#--> Motor B steps
+     |         |   #                                  |          |   |---#--> Motor B dir
+     |         |   #         8255 PPI            ,--->| PIC CPU1 |---+---#--> Motor C steps
+     |         |   #     ___________________     |    |__________|   |---#--> Motor C dir
+     |         |   #    |                   |    |                   |---#--> Motor D steps
+     |   0x300 |---#--->| 0x0300    PORT A  |----|                   `---#--> Motor D dir
+     |   0x301 |---#--->| 0x0301    PORT B  |----|                       #
+     |   0x302 |---#--->| 0x0302    PORT C  |----|                   ,---#--> Motor E steps
+     |   0x303 |---#--->| 0x0303 CTRL WORD  |    |                   |---#--> Motor E dir
+     |         |   #    |                   |    |     __________    |---#--> Motor F steps
+     |         |   #    |___________________|    |    |          |   |---#--> Motor F dir
+     |_________|   #                             `--->| PIC CPU2 |---+---#--> Motor G steps
+                   #                                  |__________|   |---#--> Motor G dir
+                   #                                                 |---#--> Motor H steps
+                   #                                                 `---#--> Motor H dir
+                   #                                                     #
+                   #######################################################
 
 
     How does the PC use this A800 card to run a motor?
@@ -158,11 +158,11 @@ PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
 
     I'm also working on an RTLINUX device driver, and may also write a
     regular linux device driver, if possible, and if so will provide it
-    on github as well, as it seems possible for modern linux kernels 
-    (as of 2020) are capable of "reliable enough" realtime execution 
+    on github as well, as it seems possible for modern linux kernels
+    (as of 2020) are capable of "reliable enough" realtime execution
     if the executable is running at a high enough priority and has memory
     pages locked down to prevent it being swapped out by another process
-    hogging memory. 
+    hogging memory.
 
 MISC
 ----
