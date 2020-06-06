@@ -1,5 +1,5 @@
-# vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
-# a800-opcs-pic-asm
+<!-- vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4 -->
+<!-- a800-opcs-pic-asm -->
 
 PIC Firmware for OPCS A800 IBM PC ISA card - Stepper Motor Pulse Generator
 
