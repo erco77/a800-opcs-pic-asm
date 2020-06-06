@@ -1,0 +1,13 @@
+aff00
+sub cx,100
+mov ax,ds
+add ax,10
+mov ds,ax
+int 3
+
+rip
+ff00
+g
+naout.com
+w
+q
