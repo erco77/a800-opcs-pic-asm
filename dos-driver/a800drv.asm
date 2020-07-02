@@ -87,9 +87,9 @@ DIRBIT          equ 0800h       ;Motor direction bit
 HARDMASK        equ 08ffh       ;Leave hardware bits behind (dirbit + lo 8 bits)
 COUNTMASK       equ 00ffh       ;Leave countable vel behind (lo 8 bits)
 
-NOCOUNTTYPE     equ 0           ;different types of counter updating
-STEPCOUNTTYPE   equ 1
-ROTCOUNTTYPE    equ 2
+NOCOUNTTYPE     equ 0           ; no counter updating
+STEPCOUNTTYPE   equ 1           ; counters count in steps
+ROTCOUNTTYPE    equ 2           ; counters count in rotations (PPR)
 
 ;
 ; A800 ADDRESS OFFSETS
