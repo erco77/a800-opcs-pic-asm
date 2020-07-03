@@ -3,11 +3,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Sync() - Synchronize the two A800 cpus
-;
+;          In REV-A, we auto-detect if we're CPU1 or CPU2
+;          by value of RA3 (1=cpu1, 0=cpu2).
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 CpuSync:
-#if BUILD_CPU == 1
+    btfss       CPU_ID          ; Bit Test File, Skip If Set: (PORTA,3)==?
+    bra         cpu2_sync       ; clr? cpu2 sync
+cpu1_sync:                      ; set? cpu1 sync
     ;
     ;  ####   #####   #    #    #
     ; #    #  #    #  #    #   ##
@@ -17,15 +20,16 @@ CpuSync:
     ;  ####   #        ####   #####
     ;
     bsf         SET_SYNC        ; tell cpu2 we're syncing: set sync (LATA,5)=1
-cs_loop1:
-    btfss       IS_ACK          ; Bit Test File, Skip If Set: (PORTA,6)==1?
-    bra         cs_loop1        ; clr? wait until set
-    bcf         SET_SYNC        ; un-sync (LATA,5)=0
-cs_loop2:
-    btfsc       IS_ACK          ; Bit Test File, Skip If Clr: (PORTA,6)==0?
-    bra         cs_loop2        ; set? wait until clr
-    return
-#else
+cpu1_cs_loop1:
+    btfss       IS_ACK          ; Bit Test File, Skip If Set: (PORTA,6)==?
+    bra         cpu1_cs_loop1   ; clr? wait until set
+    bcf         SET_SYNC        ; set? un-sync (LATA,5)=0
+cpu1_cs_loop2:
+    btfsc       IS_ACK          ; Bit Test File, Skip If Clr: (PORTA,6)==?
+    bra         cpu1_cs_loop2   ; set? wait until clr
+    return                      ; clr? done
+
+cpu2_sync:
     ;
     ;  ####   #####   #    #   ####
     ; #    #  #    #  #    #  #    #
@@ -33,14 +37,13 @@ cs_loop2:
     ; #       #####   #    #   ####
     ; #    #  #       #    #  #
     ;  ####   #        ####   ######
-cs_loop1:
-    btfss       IS_SYNC         ; Bit Test File, Skip If Set: (PORTA,6)==0?
-    bra         cs_loop1        ; clr? wait until set
+cpu2_cs_loop1:
+    btfss       IS_SYNC         ; Bit Test File, Skip If Set: (PORTA,6)==?
+    bra         cpu2_cs_loop1   ; clr? wait until set
     bsf         SET_ACK         ; set? ack (LATA,5)=1
-cs_loop2:
-    btfsc       IS_SYNC         ; Bit Test File, Skip If Set: (PORTA,6)==0?
-    bra         cs_loop2        ; clr? wait until set
-    bcf         SET_ACK         ; un-ack (LATA,5)=0
+cpu2_cs_loop2:
+    btfsc       IS_SYNC         ; Bit Test File, Skip If Set: (PORTA,6)==?
+    bra         cpu2_cs_loop2   ; clr? wait until set
+    bcf         SET_ACK         ; set? un-ack (LATA,5)=0
     nop                         ; allow time for CPU1 to see ACK
     return
-#endif
