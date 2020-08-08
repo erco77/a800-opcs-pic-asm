@@ -42,21 +42,21 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 ;;
 ;; SIGNAL MAPPING BETWEEN PC <-> 8255 <-> PIC
 ;;
-;;     IBMPC      --8255--    --PIC---
-;;     PORT:MASK  PORT:BIT    PORT:BIT(CPU) SIGNAL NAME
-;;     ---------  ---------   ------------- -------------
-;;      0300:ff   PORTA:0-7   RC0-7(CPU1+2) DATA
-;;      0301:01   PORTB:0     RA1  (CPU1)   ACK CPU1
-;;      0301:02   PORTB:1     RA1  (CPU2)   ACK CPU2
-;;      0301:fc   PORTB:2-7   unused
-;;      0302:01   PORTC:0     RA0  (CPU2)   STROBE CPU2
-;;      0302:02   PORTC:1     unused        -
-;;      0302:04   PORTC:2     RA2  (CPU2)   SVEL CPU2
-;;      0302:08   PORTC:3     unused        -
-;;      0302:10   PORTC:4     RA0  (CPU1)   STROBE CPU1
-;;      0302:20   PORTC:5     unused        -
-;;      0302:40   PORTC:6     RA2  (CPU1)   SVEL CPU1
-;;      0302:80   PORTC:7     unused        -
+;;     IBMPC        --8255--       --PIC---
+;;     PORT:MASK    PORT:BIT       PORT:BIT(CPU) SIGNAL NAME
+;;     ---------    ---------      ------------- -------------
+;;      0300:ff  -> PORTA:0-7  ->  RC0-7(CPU1+2) DATA
+;;      0301:01  <- PORTB:0    <-  RA1  (CPU1)   ACK CPU1
+;;      0301:02  <- PORTB:1    <-  RA1  (CPU2)   ACK CPU2
+;;      0301:fc  <- PORTB:2-7  <-  unused
+;;      0302:01  -> PORTC:0    ->  RA0  (CPU2)   STROBE CPU2
+;;      0302:02  -> PORTC:1    ->  unused        -
+;;      0302:04  -> PORTC:2    ->  RA2  (CPU2)   SVEL CPU2
+;;      0302:08  -> PORTC:3    ->  unused        -
+;;      0302:10  -> PORTC:4    ->  RA0  (CPU1)   STROBE CPU1
+;;      0302:20  -> PORTC:5    ->  unused        -
+;;      0302:40  -> PORTC:6    ->  RA2  (CPU1)   SVEL CPU1
+;;      0302:80  -> PORTC:7    ->  unused        -
 ;;
 ;; 8255
 ;;     --8255--
