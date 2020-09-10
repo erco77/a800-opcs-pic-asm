@@ -64,6 +64,21 @@
     its ability to run at high speed (64MHz) and its programmable ditial
     I/O pins running in normal +5/gnd TTL/CMOS compatible operation, with
     built-in pullups on the programmed inputs.
+    
+    There's many .asm files, where's the entry point?
+    -------------------------------------------------
+    a800-opcs-asm.asm is the top level file with the main loop, and it
+    include's all the other files which define subroutines:
+    
+        a800-opcs-asm.asm       -- Boot entry & main loop
+        a800-config.h           -- The PIC's pre-boot configure bit settings
+        a800-cpusync.asm        -- Synchronizes the two PIC chips on boot
+        a800-init.asm           -- Initialized the PIC hardware (defines I/O, clock speed, etc)
+        a800-readvels.asm       -- Top level state machine for reading vels for the different motors
+        a800-readvels-*chan.asm -- Per-channel velocity reading data from PC DOS driver via 8255
+        a800-runmotors.asm      -- Run Motors by changing the step/dir bits
+        a800-sleep.asm          -- 1 second delay to pause after boot to ensure I/O stable before syncing processors
+        a800-step.asm           -- Routine to send a step pulse to each of the 4 channels
 
     How fast can this chip run stepper motors?
     ----------------------------------------------
