@@ -128,10 +128,13 @@
     Sending a single 8 bit value to the PIC involves this process:
 
        1. Wait for PIC to be ready to receive new data: wait for RA1 to go low
-       2. Write low 8 bits of the A channel motor velocity to the PIC's PORT C (RC0 thru RC7).
+       2. Write 8 bits of channel motor velocity to the PIC's PORT C (RC0 thru RC7).
        3. Strobe PIC to read the 8 bits of data by setting RA0 to 1
        4. Wait for ack from PIC: wait for RA1 to go high
        5. Clear strobe by setting RA0 to 0
+
+    Keep in mind the above 5 steps are done once for each 8 bit quantity, so
+    those steps are done 8 times on every interrupt tick.
 
     At the end of the motor move, the computer should send zero velocities to stop
     the motors, disabling the stepping pulse trains. By not writing new values, the PIC will
