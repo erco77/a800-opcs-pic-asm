@@ -65,6 +65,60 @@
     I/O pins running in normal +5/gnd TTL/CMOS compatible operation, with
     built-in pullups on the programmed inputs.
 
+    How do I run a stepper motor using this software?
+    -------------------------------------------------
+    The computer sends stepper motor velocity values to the chip, and the chip
+    handles the pulse train timing to make the motors run at that speed during
+    the sample velocity time period (1/50th of a second). So sending a value of 1
+    will send 50 pulses per second to the stepper motor.
+
+    The chip can handle driving 4 stepper motors. With two chips programmed with
+    the same software clocked by the same crystal, the two chips together can run
+    8 stepper motors.
+
+    The PIC chip generates an interrupt every time it's ready for a new set of
+    velocities, which happens at approx 50 hz. The computer has that much time
+    to write the four 16 bit velocity values to the PIC chip's internal buffer.
+    On the next interrupt, it begins using the buffered velocities, and is ready
+    to accept new velocities for the NEXT interrupt.
+
+    The computer can send velocities to the PIC via simple hand-shaking using
+    an 8 bit port and a few hand shaking bits. In the A800 application, an 8255
+    24 bit I/O chip is used to interface between the IBM PC's ISA bus and the two
+    synchronized PIC chips.
+
+    Ignoring the details of the 8255 chip, the computer basically sends four
+    16 bit velocities in order, 8 bits at a time; LSB first, MSB second.
+
+    To begin a new stepper motor run, the computer first zeroes the PIC chip
+    to initialize it:
+
+       1. Set bits RA0 ("strobe") and RA2 ("Starting Velocities") to 1 to prepare PIC firmware for a new move
+       2. Wait for acknowledge from the PIC: wait for RA1 to go high
+       3. Clear strobe by setting RA0 and RA2 to 0
+       4. Wait for acknowledge from the PIC: wait for RA1 to go low
+
+    Pic is now ready to receive data on each interrupt pulse it sends from RA4,
+    which is supposed to trip the computer's IRQ to send the 4 motor channels
+    worth of 16 bit data as separate 8 bit quantities in this order:
+
+        A LSB, A MSB, B LSB, B MSB, C LSB, C MSB, D LSB, D MSB
+
+    ..so basically eight 8bit values are sent in order, and then the computer waits
+    until the next interrupt tick to send the next velocities.
+
+    Sending a single 8 bit value to the PIC involves this process:
+
+       1. Wait for PIC to be ready to receive new data: wait for RA1 to go low
+       2. Write low 8 bits of the A channel motor velocity to the PIC's PORT C (RC0 thru RC7).
+       3. Strobe PIC to read the 8 bits of data by setting RA0 to 1
+       4. Wait for ack from PIC: wait for RA1 to go high
+       5. Clear strobe by setting RA0 to 0
+
+    At the end of the motor move, the computer should send zero velocities to stop
+    the motors, disabling the stepping pulse trains. By not writing new values, the PIC will
+    simply keep sending last velocities written (0), keeping the motors stopped.
+
     How fast can this chip run stepper motors?
     ----------------------------------------------
     For micro stepping drives that run motors using 2000 pulses per revolution,
