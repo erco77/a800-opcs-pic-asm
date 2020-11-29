@@ -117,7 +117,10 @@
     which is supposed to trip the computer's IRQ to send the 4 motor channels
     worth of 16 bit data as separate 8 bit quantities in this order:
 
-        A LSB, A MSB, B LSB, B MSB, C LSB, C MSB, D LSB, D MSB
+       1+2) "A" LSB, "A" MSB
+       3+4) "B" LSB, "B" MSB
+       5+6) "C" LSB, "C" MSB
+       7+8) "D" LSB, "D" MSB
 
     ..so basically eight 8bit values are sent in order, and then the computer waits
     until the next interrupt tick to send the next velocities.
