@@ -70,22 +70,22 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 ;; --------------------
 ;;
 ;;     --8255--
-;;     PORT:BIT   I/O  DESCRIPTION
-;;     ========== ==== ===============================
-;;     PORT A     OUT  8 bit data bus, 8255 -> CPU1+2
+;;     PORT:BIT   MASK I/O  DESCRIPTION
+;;     ========== ==== ==== ===============================
+;;     PORT A     0xFF OUT  8 bit data bus, 8255 -> CPU1+2
 ;;     -----------------------------------------------
-;;     PORT B:0   IN   CPU0 ACK
-;;     PORT B:1   IN   CPU1 ACK
-;;     PORT B:2-7 IN   unused
+;;     PORT B:0   0x01 IN   CPU1 ACK
+;;     PORT B:1   0x02 IN   CPU2 ACK
+;;     PORT B:2-7 0xFD IN   unused
 ;;     -----------------------------------------------
-;;     PORT C:0   OUT  CPU2 STROBE
-;;     PORT C:1   OUT  unused
-;;     PORT C:2   OUT  CPU2 START VEL
-;;     PORT C:3   OUT  unused
-;;     PORT C:0   OUT  CPU1 STROBE
-;;     PORT C:1   OUT  unused
-;;     PORT C:2   OUT  CPU1 START VEL
-;;     PORT C:3   OUT  unused
+;;     PORT C:0   0x01 OUT  CPU2 STROBE
+;;     PORT C:1   0x02 OUT  unused
+;;     PORT C:2   0x04 OUT  CPU2 START VEL
+;;     PORT C:3   0x08 OUT  unused
+;;     PORT C:4   0x10 OUT  CPU1 STROBE
+;;     PORT C:5   0x20 OUT  unused
+;;     PORT C:6   0x40 OUT  CPU1 START VEL
+;;     PORT C:7   0x80 OUT  unused
 ;;
 ;; PICKIT 4 PROGRAMMER 5-PIN CONNECTOR
 ;; -----------------------------------

@@ -107,16 +107,16 @@ CTRL_8255       equ BASE+3
 ;
 
 ; ACK handshake signal from a cpu
-ack_bit_cpu1            equ 01h
-ack_bit_cpu2            equ 02h
+ack_bit_cpu1            equ 01h         ; 8255 PORT B0
+ack_bit_cpu2            equ 02h         ; 8255 PORT B1
 
 ; STROBE data to a cpu
-strobe_bit_cpu1         equ 10h
-strobe_bit_cpu2         equ 01h
+strobe_bit_cpu1         equ 10h         ; 8255 PORT C4
+strobe_bit_cpu2         equ 01h         ; 8255 PORT C0
 
 ; SVEL handshake signal to a cpu
-start_bit_cpu1          equ 40h
-start_bit_cpu2          equ 04h
+start_bit_cpu1          equ 40h         ; 8255 PORT C6
+start_bit_cpu2          equ 04h         ; 8255 PORT C2
 
 A800_8259_BIT           equ 20h         ; 8259 IRQ5: set=ints off, clr=ints on
 KEYBOARD_BIT            equ 02h         ; (2 is to disable keyboard ints)
