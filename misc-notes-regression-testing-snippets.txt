@@ -1,0 +1,44 @@
+--- This was just above main_loop: -----------------------------
+    Just above the calls to SleepSec and CpuSync
+
+;;  ; Some useful initial vels[] during early r&d testing
+;;  ;
+;;  ; vels[0] = 0x10
+;;  lfsr    FSR0,vels
+;;  movlw   0x10
+;;  movwf   POSTINC0
+;;  ;
+;;  ; vels[1] = 0x50
+;;  movlw   0x50
+;;  movwf   POSTINC0
+;;  ;
+;;  ; vels[2] = 0x85
+;;  movlw   0x85
+;;  movwf   POSTINC0
+;;  ;
+;;  ; vels[3] = 0xf0
+;;  movlw   0xf0
+;;  movwf   POSTINC0
+;;
+;;  call    RunMotors
+;;
+;;#include "a800-readvels-regression-test.asm"  ; starts running right here
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; blink:       ; blink at ~1sec rate
+;;    CLRWDT
+;;    BCF PORTB,0
+;;    call SleepSec
+;;    BSF PORTB,0
+;;    call SleepSec
+;;    goto blink
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+--- This was near the bottom of 'main' -----------------------------
+
+;;    ;; TESTING ONLY -- ADD +1 TO A CHAN VEL EVERY IRQ
+;;    movf    LATA,W
+;;    andlw   b'00010000'
+;;    bz      main_loop
+;;    incf    (vels+0),1
+;;    goto    main_loop

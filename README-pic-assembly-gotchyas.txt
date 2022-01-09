@@ -219,9 +219,9 @@ BEST WAY TO MOVE DATA
     If you need to move lots of data around, you can use the
     auto-incrementing indexing registers (FSR0 == POSTINC0, FSR1 == POSTINC1, etc):
 
-       movlw 0
-       movff WREG,POSTINC0		- Puts 0 into mem pointed to by FSR0 and increments it
-       movff WREG,POSTINC0		- Puts 0 into mem pointed to by FSR0 and increments it
+       movlw 0                          - Load WREG with 0
+       movff WREG,POSTINC0		- Puts WREG's 0 into mem pointed to by FSR0 and increments it
+       movff WREG,POSTINC0		- Puts WREG's 0 into mem pointed to by FSR0 and increments it
        movff WREG,POSTINC0		- etc
 
     Or from one memory location to another:
@@ -262,12 +262,12 @@ JUMP TABLE
 ----------
     A jump table is used for the large "32 state" state machine, to avoid
     having a long series of multiple "IF" statements that take a lot of
-    execution time.
+    execution time. A jump table ensures a fixed execution time to resolve
+    no matter which index is used for the switch().
 
-    With a jump table, no matter which index is used for the switch(),
-    one can run the proper code after a simple few math instructions
-    to handle the full 21bit memory address to jump to, so that even
-    if the table crosses a page boundary, the address will be correct.
+    The proper code to run is calculated by a simple few math instructions
+    to handle the full 21bit memory address to jump to, so even if the table
+    crosses a page boundary, the address will be correct.
 
     The jump table is a series of GOTO commands which are 4 bytes each,
     allowing for a constant of 4 to be used for index step rate.
@@ -276,16 +276,16 @@ JUMP TABLE
     of the function we want to jump to:
 
 	    ; Multiply index by 4 and save, to properly jump into the GOTO table..
-	    movf    my_index,W            ; state -> WREG
-	    rlncf   WREG,0,0              ; rotate left to multiply by 2
-	    rlncf   WREG,0,0              ; rotate left to multiply by 4
+	    movf    my_index,W            ; index -> WREG                       _
+	    rlncf   WREG,0,0              ; rotate left to multiply by 2         |__ multiply by 4
+	    rlncf   WREG,0,0              ; rotate left again to multiply by 2  _|
 	    movwf   my_index_x4,BANKED    ; save x4 result for actual PCL adjust below
 
 	    ; Now do the math for the jump table that handles page boundaries..
 	    movlw   high (my_jmp_table)   ; Get hi address of jmp table, and..
 	    movwf   PCLATH                ; ..put it in PCLATH (high PC latch).
 	    movlw   low  (my_jmp_table)   ; Get low address of jmp table..
-	    addwf   my_index_x4,W,BANKED  ; add on the index * 4, sets carry on overflow (page bound)
+	    addwf   my_index_x4,W,BANKED  ; add on the index x 4, sets carry on overflow (page bound)
 	    btfsc   STATUS,C		  ; carry clear? Skip
 	    incf    PCLATH,F		  ; carry set? inc PCLATH
 

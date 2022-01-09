@@ -68,6 +68,7 @@ give a breadcrumb trail to remind of the processes used:
 		o Finally, test the code on the IBM PC through DOS using at first the debugger
 		  to initialize the 8255:
 
+				C:\> debug
 		  		o 303 82
 
 		  ..and then toggle the strobe/svel bits by hand, and update the data bus,
@@ -94,7 +95,7 @@ give a breadcrumb trail to remind of the processes used:
 
 		  		pic/a800-opcs     -- directory containing the C PIC firmware
 		  		pic/a800-opcs-asm -- directory containing the Assembly PIC firmware
-				
+
 THE DEBUGGER FOR ASSEMBLY LANGUAGE
 ----------------------------------
     OK, the MPLABX debugger is pretty amazing.

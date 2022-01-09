@@ -14,6 +14,11 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; - A800 FIRMWARE SOURCE CODE -
+;;   To be programmed on CPU1 and CPU2 of the OPCS A800 stepper drive card.
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 ;; PIC CHIP PIN ASSIGNMENTS
 ;; ------------------------
 ;;                         CPU1                               #                        CPU2
@@ -239,7 +244,7 @@ MAIN_PROG CODE                          ; let linker place main program
 
     ; Functions
     ;    Each function in separate .asm file to prevent having one
-    ;    very long code to scroll up + down through during development.
+    ;    very long file of code to scroll up + down through during development.
     ;
     #include "a800-init.asm"            ; defines Init(): Initializes the PIC hardware
     #include "a800-sleep.asm"           ; defines SleepSec(): sleeps ~1 sec
@@ -324,37 +329,7 @@ main_initpos_loop:
     movwf   stp_arg_dir
     movwf   stp_arg_step
 
-;;  ; Some useful initial vels[] during early r&d testing
-;;  ;
-;;  ; vels[0] = 0x10
-;;  lfsr    FSR0,vels
-;;  movlw   0x10
-;;  movwf   POSTINC0
-;;  ;
-;;  ; vels[1] = 0x50
-;;  movlw   0x50
-;;  movwf   POSTINC0
-;;  ;
-;;  ; vels[2] = 0x85
-;;  movlw   0x85
-;;  movwf   POSTINC0
-;;  ;
-;;  ; vels[3] = 0xf0
-;;  movlw   0xf0
-;;  movwf   POSTINC0
-;;
-;;  call    RunMotors
-;;
-;;#include "a800-readvels-regression-test.asm"  ; starts running right here
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; blink:       ; blink at ~1sec rate
-;;    CLRWDT
-;;    BCF PORTB,0
-;;    call SleepSec
-;;    BSF PORTB,0
-;;    call SleepSec
-;;    goto blink
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;#include "a800-readvels-regression-test.asm"  ; starts running right here
 
     ; Wait a second so both processors are fully initialized before doing sync.
     ; We don't want initialization noise to cause a false sync handshake.
@@ -362,9 +337,7 @@ main_initpos_loop:
     call    CpuSync             ; sync both cpus /once/ before starting main loop
 
 main_loop:
-    CLRWDT
-
-    ; call    CpuSync           ; [OLD] sync both cpus every iteration
+    CLRWDT                      ; Clear Watchdog Timer
 
     ; // Buffer ports with inputs
     ; G_porta = PORTA;     // port A is mix of in and out
@@ -372,7 +345,6 @@ main_loop:
 
     ; G_portc = PORTC;     // port C is all inputs
     movff   PORTC,G_portc
-
 
     ; ReadVels();
     call    ReadVels
@@ -391,14 +363,5 @@ main_loop:
     ; PORTB = G_portb.all; // apply accumulated step/dir bits all at once
     movff   G_portb, PORTB
     goto    main_loop        ; FOREVEVER MAIN LOOP
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;    ;; TESTING ONLY -- ADD +1 TO A CHAN VEL EVERY IRQ
-;;    movf    LATA,W
-;;    andlw   b'00010000'
-;;    bz            main_loop
-;;    incf    (vels+0),1
-;;    goto    main_loop
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     END
