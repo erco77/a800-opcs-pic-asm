@@ -176,9 +176,6 @@ stp_arg_step    res 1
 slp_ctr0        res 1
 slp_ctr1        res 1
 
-; Variables used internally by CpuSync()
-cs_ctr          res 1           ; call counter
-
 ; Variables used internally by RunMotors()
 rm_chan         res 2           ; chan loop variable
 ;rm_fsr0        res 2           ; temp save for FSR0
@@ -320,9 +317,6 @@ main_initpos_loop:
     incf    WREG                     ; chan++
     cpfseq  G_maxchans               ; chan == MAXCHANS? skip if so
     goto    main_initpos_loop        ; loop if not
-
-    ; cs_ctr = 0;
-    clrf    cs_ctr
 
     ; Zero out Step() function arguments
     movlw   0

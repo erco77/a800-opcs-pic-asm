@@ -3,8 +3,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Sync() - Synchronize the two A800 cpus
-;          In REV-A, we auto-detect if we're CPU1 or CPU2
-;          by value of RA3 (1=cpu1, 0=cpu2).
+;;
+;          In REV-A, syncing is only done once on boot.
+;          Previously this was called each iteration.
+;
+;          In REV-A, RA3 is used to auto-detect if we're CPU1 or CPU2.
+;          RA3: 1=cpu1, 0=cpu2.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 CpuSync:
