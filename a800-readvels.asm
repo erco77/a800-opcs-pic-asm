@@ -1,6 +1,21 @@
 ; vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
 
 ; ReadVels()
+;
+;   Handles reading velocities sent from IBM PC and stores them in our
+;   vels[] and dirs[] array buffers for sending to the motors on next IRQ.
+;
+;   This code does not block; it handles moving through the states of
+;   reading vels from PC, hand shaking with PC, saving data, etc.
+;   one step at a time on each call to this function, a sort of
+;   "unrolled loop" that has a fixed execution time.
+;
+;   This function also includes the combined code in the files:
+;       a800-readvels-achan.asm     ; read vels for A channel
+;       a800-readvels-bchan.asm     ; read vels for B channel
+;       a800-readvels-cchan.asm     ; read vels for C channel
+;       a800-readvels-dchan.asm     ; read vels for D channel
+;
 ReadVels:
 
     ; Prepare FSR0 = vels[G_new_vix][0]
