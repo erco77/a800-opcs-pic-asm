@@ -80,6 +80,19 @@
         a800-sleep.asm          -- 1 second delay to pause after boot to ensure I/O stable before syncing processors
         a800-step.asm           -- Routine to send a step pulse to each of the 4 channels
 
+    There's many README files..?
+    ----------------------------
+    Yeah, there's a lot of README files. Better to separate ideas rather than have them
+    in one long .txt file, so:
+
+        README-debugging-techniques.txt    -- A paper trail of MPLAB X techniques I used to design and debug this code
+        README-jump-table.txt              -- A description of how this code uses 'jump tables' for critical timing
+        README-mplabx.txt                  -- This will someday contain specific MPLAB X instructions to build/maintain the code
+        README-pic-assembly-gotchyas.txt   -- Details on specific PIC assembly techniques I leverage in this code
+        README-pin-assignments.txt         -- The PIC pin and port assignments for this project
+        README-sending-vels-from-pc.txt    -- A description from the IBM PC's driver point of view for how to load velocities to the A800
+        README.md                          -- The github master README file (what you're reading now)
+
     How do I run a stepper motor using this software?
     -------------------------------------------------
     The computer sends stepper motor velocity values to the chip, and the
@@ -274,4 +287,5 @@ MISC
     "MPASM Assembler, MPLINK Object Linker, (etc) User's Guide"
     http://ww1.microchip.com/downloads/en/DeviceDoc/33014L.pdf
     ..useful stuff on the assembler; how to write macros, etc.
+
 
