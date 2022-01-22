@@ -18,7 +18,6 @@ near complete details, just the basics):
 	    uchar *ringbuffer;		// far pointer to 64K ring buffer
 					// (char* because HEAD+TAIL are byte indexed)
 	    long *counter;		// far pointer to (long) pulse counters
-	    uint baseaddr;		// base i/o port address for kuper card
 	    uint head,tail;		// ring buffer head/tail pointers
 	    int stopped,		// motor routine hit last vels
 		fault,			// a synchronization fault occurred
@@ -54,17 +53,18 @@ near complete details, just the basics):
 
 	    static void start_kuper(void);
 	    {
-		struct REGS in, out;
+		union REGS in, out;
 
 		// GIVE A800 DRIVER ADDRESS OF ABOVE Kuper STRUCTURE
-		in.h.ah = 0;			// Function 0: Set Kuper structure
-		in.x.bx = (short)kuper;		// bx is offset of struct
-		in.x.cx = (long )kuper >> 16;	// cx is segment of struct
-		int86(0x99, &in, &out);		// INT 99H
+		in.h.ah = 0;		        // Function 0: Set Kuper structure
+		in.x.bx = FP_OFF(kuper);        // bx is offset of struct
+		in.x.cx = FP_SEG(kuper);        // cx is segment of struct
+		int86(0x99, &in, &out);         // INT 99H
 
 		// START INTERRUPTS
-		in.h.ah = 1;			// Function 1: Start interrupts feeding
-		int86(0x99, &in, &out);		// vels from kuper->ringbuffer to motors
+		in.h.ah = 1;		        // Function 1: Start interrupts feeding
+		int86(0x99, &in, &out);         // vels from kuper->ringbuffer to motors
+
 		return;
 	    }
 
