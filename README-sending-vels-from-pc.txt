@@ -72,3 +72,24 @@ are used (CPU1's or CPU2's). We use CPU1 (chans A-D) in this example:
 As described above, this sends 4 vels A,B,C,D to the first PIC chip (CPU1).
 Repeat using different ports/bits to send 4 vels E,F,G,H to the second PIC chip (CPU2).
 
+It's important to note that the 8255 I/O chip supports 24 bits of I/O, and is split
+into three 8 bit ports: PORT A, PORT B and PORT C.
+
+For the A800, PORT A is used as the common data bus to both PIC chips, used for
+passing velocity bytes out to the PICs to set the stepper motor speed for each channel.
+
+For each PIC chip there are separate start, strobe and acknowledge bits which are
+used by the IBM PC software to choose which PIC chip is being sent data. Basically:
+
+                 8255    PORT
+        CPU      PORT    MASK  DESCRIPTION
+        ------   ------  ----  ----------------------------------------------------
+        CPU #1   PORT-A  0xFF  Data (for sending bytes, PC -> PIC#1 and PIC#2)
+        CPU #1   PORT-C  0x40  "SVEL strobe" bit (for sending 'start', PC -> PIC#1)
+        CPU #1   PORT-C  0x10  "data strobe" bit (for sending vels, PC -> PIC#1)
+        CPU #1   PORT-B  0x01  PIC #1 Acknowledge bit, PIC#1 -> PC.
+        ------   ------  ----  ----------------------------------------------------
+        CPU #2   PORT-A  0xFF  Data (for sending bytes, PC -> PIC#2 and PIC#1)
+        CPU #2   PORT-C  0x04  "SVEL strobe" bit (for sending 'start', PC -> PIC#2)
+        CPU #2   PORT-C  0x01  "data strobe" bit (for sending vels, PC -> PIC#2)
+        CPU #2   PORT-B  0x02  PIC #2 Acknowledge bit, PIC#2 -> PC.
