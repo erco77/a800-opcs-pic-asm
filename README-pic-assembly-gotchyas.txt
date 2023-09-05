@@ -265,9 +265,10 @@ JUMP TABLE
     execution time. A jump table ensures a fixed execution time to resolve
     no matter which index is used for the switch().
 
-    The proper code to run is calculated by a simple few math instructions
-    to handle the full 21bit memory address to jump to, so even if the table
-    crosses a page boundary, the address will be correct.
+    With a jump table, no matter which index is used for the switch(),
+    one can run the proper code after a simple few math instructions
+    to handle the full 21bit memory address to jump to, so that even
+    if the table crosses a page boundary, the address will be correct.
 
     The jump table is a series of GOTO commands which are 4 bytes each,
     allowing for a constant of 4 to be used for index step rate.
@@ -285,7 +286,7 @@ JUMP TABLE
 	    movlw   high (my_jmp_table)   ; Get hi address of jmp table, and..
 	    movwf   PCLATH                ; ..put it in PCLATH (high PC latch).
 	    movlw   low  (my_jmp_table)   ; Get low address of jmp table..
-	    addwf   my_index_x4,W,BANKED  ; add on the index x 4, sets carry on overflow (page bound)
+	    addwf   my_index_x4,W,BANKED  ; add on the index * 4, sets carry on overflow (page bound)
 	    btfsc   STATUS,C		  ; carry clear? Skip
 	    incf    PCLATH,F		  ; carry set? inc PCLATH
 

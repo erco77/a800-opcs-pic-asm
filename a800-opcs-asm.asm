@@ -1,5 +1,13 @@
 ; vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; TITLE - A800 - REV A1 FIRMWARE
+;
+;         To be programmed on CPU1 and CPU2 of the OPCS A800 stepper drive card.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
     list p=18F24Q10
 #include "a800-config.h"
 
@@ -12,11 +20,6 @@
 MAXFREQ     equ .300    ; max frequency count for main iters (300)
 MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; - A800 FIRMWARE SOURCE CODE -
-;;   To be programmed on CPU1 and CPU2 of the OPCS A800 stepper drive card.
-;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; PIC CHIP PIN ASSIGNMENTS
