@@ -83,13 +83,13 @@ used by the IBM PC software to choose which PIC chip is being sent data. Basical
 
                  8255    PORT
         CPU      PORT    MASK  DESCRIPTION
-        ------   ------  ----  ----------------------------------------------------
-        CPU #1   PORT-A  0xFF  Data (for sending bytes, PC -> PIC#1 and PIC#2)
+        ------   ------  ----  -------------------------------------------------------------
+        CPU #1   PORT-A  0xFF  8-bit Data bus (for sending bytes from PC -> PIC#1 and PIC#2)
         CPU #1   PORT-C  0x40  "SVEL strobe" bit (for sending 'start', PC -> PIC#1)
         CPU #1   PORT-C  0x10  "data strobe" bit (for sending vels, PC -> PIC#1)
         CPU #1   PORT-B  0x01  PIC #1 Acknowledge bit, PIC#1 -> PC.
-        ------   ------  ----  ----------------------------------------------------
-        CPU #2   PORT-A  0xFF  Data (for sending bytes, PC -> PIC#2 and PIC#1)
+        ------   ------  ----  -------------------------------------------------------------
+        CPU #2   PORT-A  0xFF  8-bit Data bus (for sending bytes from PC -> PIC#2 and PIC#1)
         CPU #2   PORT-C  0x04  "SVEL strobe" bit (for sending 'start', PC -> PIC#2)
         CPU #2   PORT-C  0x01  "data strobe" bit (for sending vels, PC -> PIC#2)
         CPU #2   PORT-B  0x02  PIC #2 Acknowledge bit, PIC#2 -> PC.
