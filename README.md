@@ -216,7 +216,7 @@
     comes at a 50Hz rate.
 
     So to run the two motors A and B motors moving at the same rate,
-    on receipt of the first IRQ, the PC might send:
+    on receipt of the first IRQ triggered by the A800, the PC might send:
 
          5 to channel A
          5 to channel B
@@ -227,9 +227,10 @@
          :
          0 to channel H
 
-    Then 1/50th of a second later, the A800 board will send another interrupt,
-    which will feed the above 5 vel to channel A and B, and zeroes to C-H, and
-    the PC will send the next 8 velocities, e.g. a little faster:
+    Then 1/50th of a second later the A800 board will trigger another interrupt,
+    which will begin actually feeding out the above 5 velocity to channel A and B
+    as 5 separate step pulses during this next 1/50th of second, and meanwhile
+    the PC will send the /next/ 8 velocities, in this case a little faster:
 
          10 to channel A
          10 to channel B
@@ -240,9 +241,11 @@
          0  to channel H
 
     In this way, precise motor ramping and positioning is possible over time.
-    All the software has to do is keep the velocities coming each time an
-    interrupt is received. So the software must have the 8 vels ready to go
-    50 times a second, otherwise a fault will occur.
+    All the software has to do is keep up with the interrupts, sending the 8
+    velocities to the A800 on each IRQ interrupt received.
+
+    So the software must have the 8 vels ready to go 50 times a second,
+    otherwise a fault will occur.
 
     A DOS device driver, "A800DRV.ASM" written in 8086 assembly language
     is used to feed the motors to the card, and C programs can write to the
