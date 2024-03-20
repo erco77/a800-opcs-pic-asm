@@ -49,6 +49,9 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 ;;	       Logic 0 (GND) if CPU #2
 ;;       This bit is used by CpuSync() to autodetect which CPU we're running on.
 ;;       Previously (in REV-0), we had to build separate binaries for CPU1+2.
+;;       In "REV-A1":
+;;         Fixed many comments
+;;         No actual code changes, other than removing unused cs_ctr variable + init
 ;;
 ;; SIGNAL MAPPING BETWEEN PC <-> 8255 <-> PIC
 ;; ------------------------------------------
