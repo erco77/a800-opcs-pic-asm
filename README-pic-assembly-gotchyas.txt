@@ -1,3 +1,89 @@
+GENERAL ASSEMBLER SYNTAX
+------------------------
+See: http://ww1.microchip.com/downloads/en/DeviceDoc/33014L.pdf
+
+Assembly appears in space separated columns:
+
+"""
+<label>  <mnemonics/ops>   <operands>    <comments>
+
+         list              p=18f24q10
+	 #include          somefile.inc
+Dest     equ               0x0b          ; define constant
+         org               0x0000
+	 goto              Start
+Start
+         movlw             0x0A
+	 movwf             Dest
+	 bcf               Dest, 3
+	 goto Start
+	 end
+"""
+
+    Numeric constants:
+
+	0xff        - hex  (also H'ff')
+	.255        - decimal (also D'255')
+	b'01010101' - binary (also B'01010101')
+
+	low 0x1234  - gets 0x34
+	high 0x1234 - gets 0x12
+
+    String constants:
+        'z'         - the character 'z' (also A'z' for ASCII char 'z')
+
+    Assembler constants ("equates"):
+
+        MAXFREQ    equ .300     ; declares macro MAXFREQ equal to 300 decimal (0x012c)
+	MAXCHANS   equ .4
+
+    Macro constants:
+
+	#define    CPU_ID   PORTA,3        ; C preprocessor style macro
+	#define    BIT_MASK b'00000101'    ; binary bitmask
+
+    Variables:
+
+        my_char  res 1		; declare 1 byte variable "my_char"
+	my_int   res 2          ; declare 2 byte variable "my_int"
+     
+    Conditional code blocks:
+
+        if (expr)     ; preferred
+	#if (expr)    ; supported
+	.if (expr)    ; supported
+
+	Example:
+
+	   if version == 100
+	       movlw 0x0a
+	       movwf io_1
+	   else
+	       movlw 0x01a
+	       movwf io_2
+	   endif
+
+    PIC18F Assembly Instructions:
+	See: https://ww1.microchip.com/downloads/en/DeviceDoc/31029a.pdf
+	Section 29
+
+	    f   - register file address (0x00 ~ 0x7f)
+	    W   - "Working Register", aka WREG
+	    b   - bit address within an 8-bit file register (0 to 7)
+	    k   - Literal field, constant data, or label (can be 8-bit or 11-bit)
+	    x   - Don't care (0 or 1)
+		  Assembler will generate code with x=0.
+	    d   - Destination select:
+		  d=0: Store result in W (WREG)
+		  d=1: store result in file register 'f'
+	    dest  Destination either the W register or the specified register file location
+
+	EXAMPLES:
+
+	    -- TBD --
+	    I'm tired, and it's late..
+        
+
 VARIABLES
 ---------
     I've declared all variables as uninitialized in RAM with e.g.

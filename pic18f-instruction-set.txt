@@ -1,0 +1,96 @@
+PIC18Fxxx Instruction Set
+
+Byte-oriented File Register Operations
+
+    ADDWF — Add WREG to f
+    ADDWFC — Add WREG and Carry bit to f
+    ANDWF — AND WREG with f
+    CLRF — Clear f
+           Clears contents of specified register or memmory location.
+           Example: clrf  my_var    -- clears the 8bits in the byte variable "my_var"
+
+    COMF — Complement f
+    CPFSEQ — Compare f with WREG, skip =
+    CPFSGT — Compare f with WREG, skip if >
+    CPFSLT — Compare f with WREG, skip if <
+    DECF — Decrement f
+    DECFSZ — Decrement f, Skip if 0
+    DCFSNZ — Decrement f, Skip if Not 0
+    INCF — Increment f
+    INCFSZ — Increment f, Skip if 0
+    INFSNZ — Increment f, Skip if Not 0
+    IORWF — Inclusive OR WREG with f
+    MOVF — Move f
+    MOVFF — Move fs (source) to fd (destination)
+    MOVWF — Move WREG to f
+    MULWF — Multiply WREG with f
+    NEGF — Negate f
+    RLCF — Rotate Left f through Carry
+    RLNCF — Rotate Left f (No Carry)
+    RRCF — Rotate Right f through Carry
+    RRNCF — Rotate Right f (No Carry)
+    SETF — Set f
+    SUBFWB — Subtract f from WREG with borrow
+    SUBWF — Subtract WREG from f
+    SUBWFB — Subtract WREG from f with borrow
+    SWAPF — Swap nibbles in f
+    TSTFSZ — Test f, skip if 0
+    XORWF — Exclusive OR WREG with f
+
+Bit-oriented File Register Operations
+
+    BCF — Bit Clear f
+    BSF — Bit Set f
+    BTFSC — Bit Test f, Skip if Clear
+    BTFSS — Bit Test f, Skip if Set
+    BTG — Bit Toggle f
+
+Control Operations
+
+    BC — Branch if Carry
+    BN — Branch if Negative
+    BNC — Branch if Not Carry
+    BNN — Branch if Not Negative
+    BNOV — Branch if Not Overflow
+    BNZ — Branch if Not Zero
+    BOV — Branch if Overflow
+    BRA — Branch Unconditionally
+    BZ — Branch if Zero
+    CALL — Call subroutine
+    CLRWDT — Clear Watchdog Timer
+    DAW — Decimal Adjust WREG
+    GOTO — Go to address
+    NOP — No Operation
+    POP — Pop top of return stack (TOS)
+    PUSH — Push top of return stack (TOS)
+    RCALL — Relative Call
+    RESET — Software device RESET
+    RETFIE — Return from interrupt enable
+    RETLW — Return with literal in WREG
+    RETURN — Return from Subroutine
+    SLEEP — Go into Standby mode
+
+Literal Operations
+
+    ADDLW — Add literal and WREG
+    ANDLW — AND literal with WREG
+    IORLW — Inclusive OR literal with WREG
+    LFSR — Move literal to FSRx
+    MOVLB — Move literal to BSR<3:0>
+    MOVLW — Move literal to WREG
+    MULLW — Multiply literal with WREG
+    RETLW — Return with literal in WREG
+    SUBLW — Subtract WREG from literal
+    XORLW — Exclusive OR literal with WREG
+
+Data Memory & Program Memory Operations
+
+    TBLRD* — Table Read
+    TBLRD*+ — Table Read with post-increment
+    TBLRD*- — Table Read with post-decrement
+    TBLRD+* — Table Read with pre-increment
+    TBLWT* — Table Write
+    TBLWT*+ — Table Write with post-increment
+    TBLWT*- — Table Write with post-decrement
+    TBLWT+* — Table Write with pre-increment
+

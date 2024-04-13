@@ -1,4 +1,4 @@
-; vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
+               ; vim: autoindent tabstop=8 shiftwidth=4 expandtab softtabstop=4
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -9,7 +9,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     list p=18F24Q10
-#include "a800-config.h"
+
+; UNCOMMENT THIS LINE FOR STANDALONE DEBUGGING (WITHOUT A800 BOARD)  
+;;DEBUG ONLY;;
+;;#define STANDALONE 1
+
+#ifdef STANDALONE
+#include "a800-config-standalone.asm"
+#else
+#include "a800-config-production.asm"
+#endif
 
 ; MAXFREQ   IRQ RATE
 ; -------   --------
@@ -188,7 +197,7 @@ slp_ctr0        res 1
 slp_ctr1        res 1
 
 ; Variables used internally by RunMotors()
-rm_chan         res 2           ; chan loop variable
+rm_chan         res 1           ; chan loop variable
 ;rm_fsr0        res 2           ; temp save for FSR0
 ;rm_fsr1        res 2           ; temp save for FSR1
 rm_fsr2         res 2           ; temp save for FSR2
@@ -210,8 +219,8 @@ rv_msb_dir      res 1           ; =1 if hi bit of msb set
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; uchar vels[2][MAXCHANS];       // 2x4 array of 8bit velocities sent from IBM PC
 ; uchar dirs[2][MAXCHANS];       // 2x4 array of 8bit velocities sent from IBM PC
-vels            res (2*MAXCHANS)
-dirs            res (2*MAXCHANS)
+vels            res (2*MAXCHANS) ; vel+0=A, vel+1=B,vel+2=C,vel+3=D : vel+4=A(vix) vel+5=B(vix)..
+dirs            res (2*MAXCHANS) ; dir+0=A..
 
 ; Run index (either 0 or 1) for vels[] and dirs[] above:
 ;   vels[G_run_vix][chan], dirs[G_run_vix][chan]
@@ -335,12 +344,53 @@ main_initpos_loop:
     movwf   stp_arg_dir
     movwf   stp_arg_step
 
-    ;;#include "a800-readvels-regression-test.asm"  ; starts running right here
+;;  ; Some useful initial vels[] during early r&d testing
+;;  ;
+;;  ; vels[0] = 0x10
+;;  lfsr    FSR0,vels
+;;  movlw   0x10
+;;  movwf   POSTINC0
+;;  ;
+;;  ; vels[1] = 0x50
+;;  movlw   0x50
+;;  movwf   POSTINC0
+;;  ;
+;;  ; vels[2] = 0x85
+;;  movlw   0x85
+;;  movwf   POSTINC0
+;;  ;
+;;  ; vels[3] = 0xf0
+;;  movlw   0xf0
+;;  movwf   POSTINC0
+;;
+;;  call    RunMotors
+;;
+;;#include "a800-readvels-regression-test.asm"  ; starts running right here
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; blink:       ; blink at ~1sec rate
+;;    CLRWDT
+;;    BCF PORTB,0
+;;    call SleepSec
+;;    BSF PORTB,0
+;;    call SleepSec
+;;    goto blink
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+#ifndef STANDALONE
     ; Wait a second so both processors are fully initialized before doing sync.
     ; We don't want initialization noise to cause a false sync handshake.
     call    SleepSec
     call    CpuSync             ; sync both cpus /once/ before starting main loop
+#else
+; vels[0] = 0x10   ; A CHANNEL
+    lfsr    FSR0,vels
+    movlw   0x5
+    movwf   POSTINC0   ; active vel
+
+; vels[1] = 0xff   ; B CHANNEL
+    movlw   0x20
+    movwf   POSTINC0   ; active vel
+#endif
 
 main_loop:
     CLRWDT                      ; Clear Watchdog Timer
@@ -369,5 +419,14 @@ main_loop:
     ; PORTB = G_portb.all; // apply accumulated step/dir bits all at once
     movff   G_portb, PORTB
     goto    main_loop        ; FOREVEVER MAIN LOOP
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;    ;; TESTING ONLY -- ADD +1 TO A CHAN VEL EVERY IRQ
+;;    movf    LATA,W
+;;    andlw   b'00010000'
+;;    bz            main_loop
+;;    incf    (vels+0),1
+;;    goto    main_loop
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     END
