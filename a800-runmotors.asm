@@ -40,10 +40,10 @@ rm_chan_loop:           ; for loop
     ; because it's a pointer to a 16bit value. The others, FSR0 and FSR1,
     ; are byte pointers, so we can use non-increment INDF0/1 for operations.
     ;
-    movff FSR2L,rm_fsr2+0
-    movff FSR2H,rm_fsr2+1
+    movff FSR2L,rm_fsr2+0         ; 2 cycles (measured)
+    movff FSR2H,rm_fsr2+1         ; 2 cycles (measured)
 
-    ; if ( G_freq == 0 ) { pos[c]  = MAXFREQ/2; }		// full iter of chan loop?
+    ; if ( G_freq == 0 ) { pos[c]  = MAXFREQ/2; }               // full iter of chan loop?
     ; else               { pos[c] += vels[G_run_vix][c]; }
     ;
 
@@ -59,44 +59,42 @@ rm_chan_loop:           ; for loop
     tstfsz WREG                  ;   1      3  ; Test + Skip If Zero. if W==0: both bytes of G_freq are 0
     goto   rm_G_freq_nz          ;   2      |  ; W != 0? G_freq is non-zero
     goto   rm_G_freq_zr          ;   |      2  ; W == 0? G_freq is zero
-
-rm_G_freq_zr:
-    ; { pos[chan] = G_maxfreq2; }
-    ;                                          ; _
-    movff  G_maxfreq2+0,POSTINC2 ;   |      3  ;  |_ pos[chan] = (MAXFREQ/2);
-    movff  G_maxfreq2+1,POSTINC2 ;   |      3  ; _|
+                                 ;   |      |
+rm_G_freq_zr:                    ;   |      |
+    ; { pos[chan] = G_maxfreq2; }    |      |
+    movff  G_maxfreq2+0,POSTINC2 ;   |      2  ; 2 cycles (measured)
+    clrf                POSTINC2 ;   |      1  ; 1 cycle  (measured) <- Faster than movff, assume FSR2 won't wrap bank
+;;;;movff  G_maxfreq2+1,POSTINC2 ;   |     xxx ; 2 cycles (measured)
     goto rm_G_freq_restore       ;   |      2
     ;                            ;   |    -----
-    ;                            ;   |      13
-
-rm_G_freq_nz:
-    nop                          ;   1      |
-    nop                          ;   1      |
+    ;                            ;   |      10
+    ;                            ;   |      |
+rm_G_freq_nz:                    ;   |      |
     ; { pos[chan] += vels[G_run_vix][chan]; }
     movf   INDF0,0               ;   1      |  ; vel[lsb] -> W  (NOTE: INDF0 doesn't increment)
     addwf  POSTINC2,1            ;   1      |  ; w + pos[chan] -> pos[chan]
     clrf   WREG                  ;   1      |
     addwfc POSTINC2,1            ;   1      |  ; carry -> pos[chan] (",1": result->pos, ",1": use BSR)
     nop                          ;   1      |
-    nop                          ;   1      |
     goto rm_G_freq_restore       ;   2      |
     ;                            ; -----  -----
-    ;                            ;   13     13   <-- symmetry
+    ;                            ;   10     10   <-- symmetry
 
 rm_G_freq_restore:
     ; restore FSR2
-    movff  rm_fsr2+0,FSR2L
-    movff  rm_fsr2+1,FSR2H
+    movff  rm_fsr2+0,FSR2L       ; 2 cycles (measured)
+    clrf   FSR2H                 ; 1 cycle  (measured) <- Faster than movff, assume FSR2 won't wrap bank
+;;;;movff  rm_fsr2+1,FSR2H       ; xxxxxxxxxxxxxxxxxxx    ; 2 cycles (measured)
 
 ; if ( pos[chan] >= MAXFREQ ) { Step(chan, dir, 1); pos[chan] -= MAXFREQ; } // step
 ; else                        { Step(chan, dir, 0);                      }  // unstep
 ;
 
-;     *** NEW CODE: REV B ***     ;
-;                 |               ;
-;                \|/              ;
-;                 v               ;
-    
+;;;   *** NEW CODE: REV B ***   ;;;
+;;;               |             ;;;
+;;;              \|/            ;;;
+;;;               v             ;;;
+
     ; if (pos[chan] >= MAXFREQ)
     ; 16bit compare GTE
     ;                             ; *** REV B: NEW CODE/BUG FIX ***
@@ -108,39 +106,40 @@ rm_G_freq_restore:
     movf    (G_maxfreq+1),W       ;  1      1      ; G_maxfreq[1] -> W  (always 01)
     subwfb  POSTINC2,W            ;  1      1      ; W = pos[chan+1] - W(G_maxfreq[1])  -- includes prev "borrow"
 ; Restore FSR2/POSTINC2           ;  |      |
-    movff  rm_fsr2+0,FSR2L        ;  2      2
-    movff  rm_fsr2+1,FSR2H        ;  2      2
+    movff  rm_fsr2+0,FSR2L        ;  2      2      ; 2 cycles (measured)
+    clrf             FSR2H        ;  1      1      ; 1 cycle  (measured) <- Faster than movff bt 1 cycle, assume FSR2 won't wrap bank
+;;;;movff  rm_fsr2+1,FSR2H        ;  xxxxxxxxxx    ; 2 cycles (measured)
 ; Branch on carry/borrow of above subwfb
-    btfss   STATUS,0,C            ;  1      3  <-- btfss takes 3 cycles to skip over goto
+    btfss   STATUS,0,C            ;  1      3      ; <-- btfss takes 3 cycles to skip over goto
     goto    rm_maxfreq_lt         ;  2      |
     goto    rm_maxfreq_gte        ;  |      2
                                   ;  -----  -----
-				  ;  11     13
+                                  ;  10     12
 rm_maxfreq_gte:                   ;  |      |
     ; Step(0,dir,1);              ;  |      |
-    movff  rm_chan,stp_arg_chan   ;  |      2   ; rm_chan -> stp_arg_chan
-    movff  INDF1,stp_arg_dir      ;  |      2   ; dir[G_run_vix][0] -> stp_arg_dir  (NOTE: INDF1 doesn't increment)
-    movlw  1                      ;  |      1   ; STEP
+    movff  rm_chan,stp_arg_chan   ;  |      2      ; rm_chan -> stp_arg_chan
+    movff  INDF1,stp_arg_dir      ;  |      2      ; dir[G_run_vix][0] -> stp_arg_dir  (NOTE: INDF1 doesn't increment)
+    movlw  1                      ;  |      1      ; STEP
     movwf  stp_arg_step           ;  |      1
-    call   Step                   ;  |      2   ; <-- Step()'s execution time is longer than 2 cycles,
+    call   Step                   ;  |      2      ; <-- Step()'s execution time is longer than 2 cycles,
                                   ;  -----  -----
-                                  ;  11     21
+                                  ;  10     20
     ; pos[chan] -= MAXFREQ;       ;  |      |
-    movlw  low MAXFREQ            ;  |      1   ; THIS IS *EXACTLY* WHAT THE C COMPILER GENERATES
-    subwf  POSTINC2,1             ;  |      1   ; POSTINC2 (FSR2) is address of pos[] current channel
+    movlw  low MAXFREQ            ;  |      1      ; THIS IS *EXACTLY* WHAT THE C COMPILER GENERATES
+    subwf  POSTINC2,1             ;  |      1      ; POSTINC2 (FSR2) is address of pos[] current channel
     movlw  high MAXFREQ           ;  |      1
     subwfb POSTINC2,1             ;  |      1
     goto   rm_maxfreq_done        ;  |      2
                                   ; -----   -----
-                                  ;  11     27
+                                  ;  10     26
 rm_maxfreq_lt:                    ;  |      |
     ; Step(0,dir,0);              ;  |      |
-    movff rm_chan,stp_arg_chan    ;  2      |   ; rm_chan -> stp_arg_chan
-    movff INDF1,stp_arg_dir       ;  2      |   ; dir[G_run_vix][0] -> stp_arg_dir  (NOTE: INDF1 doesn't increment)
-    movlw 0                       ;  1      |   ; UN-STEP
+    movff rm_chan,stp_arg_chan    ;  2      |      ; rm_chan -> stp_arg_chan
+    movff INDF1,stp_arg_dir       ;  2      |      ; dir[G_run_vix][0] -> stp_arg_dir  (NOTE: INDF1 doesn't increment)
+    movlw 0                       ;  1      |      ; UN-STEP
     movwf stp_arg_step            ;  1      |
-    call Step                     ;  2      |   ; <-- Step()'s execution time is longer than 2 cycles,
-    ;                             ;  |      |   ;     but should be consistent at least.
+    call Step                     ;  2      |      ; <-- Step()'s execution time is longer than 2 cycles,
+    ;                             ;  |      |      ;     but should be consistent at least.
     ; The rest of this section    ;  |      |
     ; NOPs for timing symmetry.   ;  |      |
     ;                             ;  |      |
@@ -153,17 +152,18 @@ rm_maxfreq_lt:                    ;  |      |
     goto rm_maxfreq_done          ;  2      |
                                   ; \|/     |
                                   ; ----- ------
-                                  ;  27    27    <-- SYMMETRY!
-				  
-;                 ^                ;
-;                /|\               ;
-;                 |                ;
-;     *** NEW CODE: REV B ***      ;
+                                  ;  26    26    <-- SYMMETRY!
+
+;;;               ^             ;;;
+;;;              /|\            ;;;
+;;;               |             ;;;
+;;;   *** NEW CODE: REV B ***   ;;;
 
 rm_maxfreq_done:
     ; Restore FSR2 which we mess with above..
-    movff  rm_fsr2+0,FSR2L
-    movff  rm_fsr2+1,FSR2H
+    movff  rm_fsr2+0,FSR2L         ; 2 cycles (measured)
+    clrf             FSR2H         ; 1 cycle  (measured) <- Faster than movff, assume FSR2 won't wrap bank
+;;;;movff  rm_fsr2+1,FSR2H         ; xxxxxxxxxxxxxxxxxxx   ; 2 cycles (measured)
 
     ; Advance FSR0 vel[]  ptr (8 bit/1 byte)
     ; Advance FSR1 dirs[] ptr (8 bit/1 byte)
@@ -313,26 +313,35 @@ rm_G_freq_lte:
                                 ;   19     19    19    <-- symmetry!
     return
 
-;; DEBUGGING
-    ; if ( pos     >= MAXFREQ ) Step(1) else Step(0)
-    ; if ( testpos >= .300    ) Step(1) else Step(0)
-test:
-    ; pos = <testpos>
-TESTPOS  equ  .299             ; decimal value for pos to compare
-    movlw   low TESTPOS        ; TESTPOS[low] -> WREG
-    movwf   (pos+0)            ; WREG -> p[0]
-    movlw   high TESTPOS       ; TESTPOS[hi] -> WREG
-    movwf   (pos+1)            ; WREG -> p[1]
+#ifdef STANDALONE
 
-    ; if (pos >= G_maxfreq) <gte> else <lt>
-    movf    (G_maxfreq+0),W    ; G_maxfreq[0] -> W  (always 2c)
-    subwf   (pos+0),W          ; W = pos[0] - W(G_maxfreq[0])  -- sets "borrow" or not
-    movf    (G_maxfreq+1),W    ; G_maxfreq[1] -> W  (always 01)
-    subwfb  (pos+1),W          ; W = pos[1] - W(G_maxfreq[1])  -- includes prev "borrow"
-    btfss   STATUS,0,C         ; test carry; skip if gte
-    goto    lt
-    goto    gte
-lt: nop
-    nop
+;;
+;; STANDALONE DEBUGGING
+;;     Only build this in standalone mode, this doesn't ever need
+;;     to appear in production firmware.
+;;
+
+     ; if ( pos     >= MAXFREQ ) Step(1) else Step(0)
+     ; if ( testpos >= .300    ) Step(1) else Step(0)
+test:
+     ; pos = <testpos>
+TESTPOS  equ  .299             ; decimal value for pos to compare
+     movlw   low TESTPOS        ; TESTPOS[low] -> WREG
+     movwf   (pos+0)            ; WREG -> p[0]
+     movlw   high TESTPOS       ; TESTPOS[hi] -> WREG
+     movwf   (pos+1)            ; WREG -> p[1]
+
+     ; if (pos >= G_maxfreq) <gte> else <lt>
+     movf    (G_maxfreq+0),W    ; G_maxfreq[0] -> W  (always 2c)
+     subwf   (pos+0),W          ; W = pos[0] - W(G_maxfreq[0])  -- sets "borrow" or not
+     movf    (G_maxfreq+1),W    ; G_maxfreq[1] -> W  (always 01)
+     subwfb  (pos+1),W          ; W = pos[1] - W(G_maxfreq[1])  -- includes prev "borrow"
+     btfss   STATUS,0,C         ; test carry; skip if gte
+     goto    lt
+     goto    gte
+lt:  nop
+     nop
 gte: nop    ; SHOULD GO HERE!
      nop
+
+#endif

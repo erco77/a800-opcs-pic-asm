@@ -5,12 +5,16 @@
 ; TITLE - A800 - REV A1 FIRMWARE
 ;
 ;         To be programmed on CPU1 and CPU2 of the OPCS A800 stepper drive card.
+;         Build environment: MPLABX 5.25 / MPASM 5.84 / WINDOWS 7
+;
+;             REV A: IRQ FREQUENCY IS 107Hz
+;             REV B: IRQ FREQUENCY IS 120Hz  (119.636Hz)
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     list p=18F24Q10
 
-; UNCOMMENT THIS LINE FOR STANDALONE DEBUGGING (WITHOUT A800 BOARD)  
+; UNCOMMENT THIS LINE FOR STANDALONE DEBUGGING (WITHOUT A800 BOARD)
 ;;DEBUG ONLY;;
 ;;#define STANDALONE 1
 
@@ -55,7 +59,7 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 ;; NOTE: In "REV-0", RA3 was unused (labeled "SMOT").
 ;;       In "REV-A" (and up), RA3 is now the CPU_ID, where the input value is:
 ;;         Logic 1 (+5V) if CPU #1
-;;	       Logic 0 (GND) if CPU #2
+;;         Logic 0 (GND) if CPU #2
 ;;       This bit is used by CpuSync() to autodetect which CPU we're running on.
 ;;       Previously (in REV-0), we had to build separate binaries for CPU1+2.
 ;;       In "REV-A1":
@@ -146,7 +150,7 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 #define IS_SYNC             PORTA,6     ; PORTA bit 6
 
 ; CPU ID
-#define CPU_ID	    	    PORTA,3	; PORTA bit 3 (RA3)
+#define CPU_ID              PORTA,3     ; PORTA bit 3 (RA3)
 
 ; PIC outputs: stepper motor bits macro constants
 #define A_STEP_BIT          G_portb,0   ; A step is bit 0 of G_portb buffer
@@ -172,6 +176,32 @@ MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
 ;                     where <funcname> is abbreviated; stp==Step, rm=RunMotors, etc.
 ;
 my_vars         udata 0x80      ; unitialized data (we init in main)
+
+; NOTE: Put arrays low in memory to keep them away from bank boundaries.
+;       This lets us take advantage of one-byte indexing.
+
+; uchar vels[2][MAXCHANS];       // 2x4 array of 8bit velocities sent from IBM PC
+; uchar dirs[2][MAXCHANS];       // 2x4 array of 8bit velocities sent from IBM PC
+vels            res (2*MAXCHANS) ; vel+0=A, vel+1=B,vel+2=C,vel+3=D : vel+4=A(vix) vel+5=B(vix)..
+dirs            res (2*MAXCHANS) ; dir+0=A..
+
+; 16 bit position array, one 16bit value per channel.
+;
+;     ushort pos[MAXCHANS];
+;
+;     This is not actual motor positions, but a velocity accumulator used to
+;     determine when a step pulse should be sent to a motor.
+;     Each high frequency main loop iter, pos[c] is increased by vels[c], and
+;     when it exceeds MAXFREQ, it's wrapped and triggers a step for that motor.
+;
+pos             res (2*MAXCHANS)
+
+; Run index (either 0 or 1) for vels[] and dirs[] above:
+;   vels[G_run_vix][chan], dirs[G_run_vix][chan]
+;
+G_run_vix       res 1       ; 0|1 index for vels[ix][chan] and dirs[ix][chan]
+G_new_vix       res 1       ; index for new vels from IBMPC (opposite of G_run_vix's value)
+
 G_maxfreq       res 2           ; MAXFREQ as a memory constant (for SUBWF)
 G_maxfreq2      res 2           ; MAXFREQ divided by 2 (used to init pos[] each iter)
 G_maxchans      res 1           ; MAXCHANS as a memory constant (for CPFwhatever)
@@ -214,34 +244,9 @@ rv_velptr       res 1           ; ptr to vels[G_new_vix]
 rv_dirptr       res 1           ; ptr to dirs[G_new_vix]
 rv_msb_dir      res 1           ; =1 if hi bit of msb set
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Motor related vars
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; uchar vels[2][MAXCHANS];       // 2x4 array of 8bit velocities sent from IBM PC
-; uchar dirs[2][MAXCHANS];       // 2x4 array of 8bit velocities sent from IBM PC
-vels            res (2*MAXCHANS) ; vel+0=A, vel+1=B,vel+2=C,vel+3=D : vel+4=A(vix) vel+5=B(vix)..
-dirs            res (2*MAXCHANS) ; dir+0=A..
-
-; Run index (either 0 or 1) for vels[] and dirs[] above:
-;   vels[G_run_vix][chan], dirs[G_run_vix][chan]
-;
-G_run_vix       res 1       ; 0|1 index for vels[ix][chan] and dirs[ix][chan]
-G_new_vix       res 1       ; index for new vels from IBMPC (opposite of G_run_vix's value)
-
 ; Flag to indicate when PC has finished sending us new vels
 ; so next IRQ can swap G_run_vix/G_new_vix and start using new vels.
 G_got_vels      res 1       ; flag indicating if IBMPC finished sending us vels
-
-; 16 bit position array, one 16bit value per channel.
-;
-;     ushort pos[MAXCHANS];
-;
-;     This is not actual motor positions, but a velocity accumulator used to
-;     determine when a step pulse should be sent to a motor.
-;     Each high frequency main loop iter, pos[c] is increased by vels[c], and
-;     when it exceeds MAXFREQ, it's wrapped and triggers a step for that motor.
-;
-pos             res (2*MAXCHANS)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; USEFUL MACROS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -384,7 +389,7 @@ main_initpos_loop:
 #else
 ; vels[0] = 0x10   ; A CHANNEL
     lfsr    FSR0,vels
-    movlw   0x5
+    movlw   0x01
     movwf   POSTINC0   ; active vel
 
 ; vels[1] = 0xff   ; B CHANNEL
