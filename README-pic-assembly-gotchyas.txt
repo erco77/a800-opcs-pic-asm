@@ -82,7 +82,7 @@ PIC INSTRUCTION FORMAT
 	The F/W "destination" and B/A "access" letters are really MACROS 
 	that resolve to 0 or 1 values.
 
-	For this reason these letter symbols are always UPPER CASE:
+	For this reason these letter symbols are always UPPER CASE.
 
 	Using the numeric 0/1 equivalents are also valid, but it's better
 	for readability to use the macro names:
