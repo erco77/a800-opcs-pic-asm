@@ -1,24 +1,26 @@
-GENERAL ASSEMBLER SYNTAX
-------------------------
-See: http://ww1.microchip.com/downloads/en/DeviceDoc/33014L.pdf
+PIC INSTRUCTION FORMAT
 
-Assembly appears in space separated columns:
+    See: http://ww1.microchip.com/downloads/en/DeviceDoc/33014L.pdf
+    ..specfically the subsection entitled "Instruction Set".
 
-"""
-<label>  <mnemonics/ops>   <operands>    <comments>
+    General Syntax
+	Assembly appears in space separated columns:
 
-         list              p=18f24q10
-	 #include          somefile.inc
-Dest     equ               0x0b          ; define constant
-         org               0x0000
-	 goto              Start
-Start
-         movlw             0x0A
-	 movwf             Dest
-	 bcf               Dest, 3
-	 goto Start
-	 end
-"""
+            <label>  <mnemonics/ops>   <operands>    <comments>
+
+        Example:
+
+		     list              p=18f24q10
+		     #include          somefile.inc
+	    Dest     equ               0x0b          ; define constant
+		     org               0x0000
+		     goto              Start
+	    Start
+		     movlw             0x0A
+		     movwf             Dest
+		     bcf               Dest, 3
+		     goto Start
+		     end
 
     Numeric constants:
 
@@ -63,6 +65,98 @@ Start
 	       movwf io_2
 	   endif
 
+    "Operands"
+        Or those weird comma-separated letter/number flags after the instruction
+	that are super important for understanding what the instruction will do.
+
+	    DECF   my_var,W,A        DECF myvar,0,0
+	                 \__/                  \___/
+		         Operands              Operands
+	Example:
+
+	    DECF   my_var,W,A
+	                  | |
+			  | Access bit: can be B(BSR Bank) or A(Access Bank)
+			  Destination bit: can be F(File) or W(WREG)
+
+	The F/W "destination" and B/A "access" letters are really MACROS 
+	that resolve to 0 or 1 values.
+
+	For this reason these letter symbols are always UPPER CASE:
+
+	Using the numeric 0/1 equivalents are also valid, but it's better
+	for readability to use the macro names:
+
+	    For "Destination Bit":
+		F = 1 ; Result is placed in File Register
+		W = 0 ; Result is placed in WREG Register
+
+	    For access bit:
+	        B = 1 ; Register used specified by BSR Bank Register
+	        A = 0 ; Register used is in Access Bank
+
+	So the "numeric equivalent" for the above "DECF  my_var,W,A" instruction is:
+
+	    DECF   my_var,0,0
+	                  | |
+			  | Access bit: 0="A"=Access Bank
+			  Destination bit: 0="W'=WREG
+
+        When destination is "F", a memory location is modified (based on "Access").
+	When destination is "W", the WREG is modified.
+
+	When Access is "B", the BSR register determines the bank for memory accesses.
+	When Access is "A", the "access bank" is used (which lets one access the first
+	128 bytes in Bank Zero, and the last 128 bytes in Bank 15 which can access the 
+	"Special Functions Registers") So with the Access Bank selected, one can access
+	both low memory variables AND the Special Function Registers, without having to
+	switch banks.
+
+    Data Memory:
+
+        So memory is 15 banks of 256 bytes each. The BSR register (Bank Select Register)
+	lets one choose which bank is being accessed, so that single byte addresses can
+	be used to access memory within that bank.
+
+        BSR       Data Memory
+		  __________________
+	0000b    |                  |
+	         |    Segment 0     |------.
+	         |- - - - - - - - - |       \
+		 |      Bank 0      |        \
+		 |__________________|         \
+	0001b    |                  |          \
+	         |                  |           \
+	         |      Bank 1      |            \
+		 |                  |             \
+		 |__________________|              \        Access Bank
+	0010b    |                  |               \      .-----------. 00h
+	         |                  |                `---> | Segment 0 |
+	         |      Bank 2      |                      |-----------| <-- DEVICE DEPENDENT BOUNDARY!
+		 |                  |                ,---> | Segment 1 |
+		 |__________________|               /      |___________| ffh
+		 :                  :              /
+		 |__________________|             /
+	1110b    |                  |            /         When the "Access Bit" is "A"(0):
+	         |                  |           /
+	         |      Bank 14     |          /               > The BSR is ignored and the Access Bank is used
+		 |                  |         /                > The "Segment 0" is the first bytes in RAM
+		 |__________________|        /                 > The "Segment 1" is the Special Functions Registers
+	1111b    |                  |       /                    from the last bytes in Bank 15, and whose addresses
+	         |      Bank 15     |      /                     and functions are DEVICE SPECIFIC.
+	         |- - - - - - - - - |     /
+		 |     Segment 1    |----`
+		 |__________________|
+
+         So when the "Access Bit" of an instruction is "B"(1), the BSR is used to specify
+	 the RAM location the instruction uses.
+
+         XXX: So if the boundary between Segment 0 and Segment 1 are device specific,
+	      how do you know how much RAM you can access via "Segment 0" if you don't know
+	      where the boundary is??
+
+
+
     PIC18F Assembly Instructions:
 	See: https://ww1.microchip.com/downloads/en/DeviceDoc/31029a.pdf
 	Section 29
@@ -78,10 +172,34 @@ Start
 		  d=1: store result in file register 'f'
 	    dest  Destination either the W register or the specified register file location
 
-	EXAMPLES:
+	EXAMPLE
 
-	    -- TBD --
-	    I'm tired, and it's late..
+	    The following code runs from top to bottom, showing results each step:
+
+            MOVLB             ; set BSR to bank 5. All memory accesses from here on will be within this bank
+
+                              ; MEM   ACCESS   WREG
+			      ; 0x7F  0x5A       X   <-- starting value
+			      ;  |     |         |
+			      ; \|/   \|/       \|/
+			      ;  v     v         v
+            DECF my_var, F, B ; 0x7E  0x5A       X   <-- mem from BSR reg bank is decremented and saved back, e.g. 7F-01=7E
+	                      ;
+	    DECF my_var, F, A ; 0x7E  0x59       X   <-- mem in Access Bank is decrememented and saved back, e.g.  5A-01=59
+	                      ;
+	    DECF my_var, W, B ; 0x7E  0x59     0x7D  <-- mem is decremented, result saved in WREG
+	                      ;  |               ^
+	                      ;  |              /|\
+			      ;   `---- DEC -----`
+			      ;
+	    DECF my_var, W, A ; 0x7E  0x59     0x58  <-- mem in Access Bank decremented, saved in WREG
+	                 |  | ;         |        ^
+	                 |  | ;         |       /|\
+			 |  | ;         `--DEC--`
+	                 |  |
+	                 |  |___ "destination" spcan be "F" or "W" -- F=1=File Register, W=0=WREG
+			 |
+	                 |______ "destination" spcan be "F" or "W" -- F=1=File Register, W=0=WREG
         
 
 VARIABLES
