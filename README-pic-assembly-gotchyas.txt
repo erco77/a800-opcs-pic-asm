@@ -161,15 +161,17 @@ PIC INSTRUCTION FORMAT
 	See: https://ww1.microchip.com/downloads/en/DeviceDoc/31029a.pdf
 	Section 29
 
-	    f   - register file address (0x00 ~ 0x7f)
-	    W   - "Working Register", aka WREG
+        In the instruction documentation, these lowercase letters indicate
+        information about the operands:
+
+	    f   - register file address (0x00 ~ 0x7f) to be used by the instruction
+	    d   - destination bit: either 0 or 1:
+		      0=W: Stored result will be in W (WREG)
+		      1=F: Stored result will be in File register as specified by address 'f'
 	    b   - bit address within an 8-bit file register (0 to 7)
 	    k   - Literal field, constant data, or label (can be 8-bit or 11-bit)
 	    x   - Don't care (0 or 1)
 		  Assembler will generate code with x=0.
-	    d   - Destination select:
-		  d=0: Store result in W (WREG)
-		  d=1: store result in file register 'f'
 	    dest  Destination either the W register or the specified register file location
 
 	EXAMPLE
@@ -197,9 +199,9 @@ PIC INSTRUCTION FORMAT
 	                 |  | ;         |       /|\
 			 |  | ;         `--DEC--`
 	                 |  |
-	                 |  |___ "destination" spcan be "F" or "W" -- F=1=File Register, W=0=WREG
+	                 |  |___ "access" can be "B" or "A" -- F=1=File Register, W=0=WREG
 			 |
-	                 |______ "destination" spcan be "F" or "W" -- F=1=File Register, W=0=WREG
+	                 |______ "destination" can be "F" or "W" -- B=1=BSR Bank addressing, A=0=Access Bank addressing
         
 
 VARIABLES
