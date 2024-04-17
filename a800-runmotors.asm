@@ -13,6 +13,16 @@ RunMotors:
     lfsr        FSR1,dirs
     lfsr        FSR2,pos
     movlw       4               ; offset for FSR0/1 if G_run_vix == 1
+
+    ;; XXX:  THESE BRANCH INSTRUCTIONS AFFECT EXECUTION TIME
+    ;;       Should they be broken out for symmetry timing?
+    ;;
+    ;;       And hmm, why not just have the G_run_vix values
+    ;;       alternate between zero and 4 so the value can simply
+    ;;       be added to FSR0 without the conditional? Everything
+    ;;       is in the same bank anyway, so FSR1L will always be
+    ;;       constant, and not wrap bank boundaries.
+    ;;
     btfsc       G_run_vix,0
     addwf       FSR0L           ; FSR0 += 4 if G_run_vix set
     btfsc       G_run_vix,0

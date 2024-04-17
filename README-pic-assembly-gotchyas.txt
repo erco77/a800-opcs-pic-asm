@@ -3,6 +3,24 @@ PIC INSTRUCTION FORMAT
     See: http://ww1.microchip.com/downloads/en/DeviceDoc/33014L.pdf
     ..specfically the subsection entitled "Instruction Set".
 
+    Also: Find and look over the contents of the PIC include file for your
+    processor to see what macros are defined. In my case the PIC 18F24Q10
+    file is in:
+
+        C:\Program Files (x86)\Microchip\MPLABX\v5.25\mpasmx\p18f24q10.inc
+
+    Looking at this file, you can see important macros the assembler predefines
+    that are often used throughout PIC assembly instructions, e.g.
+
+        FSR0             EQU  0
+	FSR1             EQU  1
+	FSR2             EQU  2
+        [..]
+	W                EQU  0      \__ Used in e.g.
+	A                EQU  0      /   DECF   my_var,W,A 
+	ACCESS           EQU  0                         \_\___ used here
+	BANKED           EQU  1
+
     General Syntax
 	Assembly appears in space separated columns:
 
@@ -66,18 +84,25 @@ PIC INSTRUCTION FORMAT
 	   endif
 
     "Operands"
-        Or those weird comma-separated letter/number flags after the instruction
+        ..and those weird comma-separated letter/number flags after the instruction
 	that are super important for understanding what the instruction will do.
 
 	    DECF   my_var,W,A        DECF myvar,0,0
-	                 \__/                  \___/
-		         Operands              Operands
+	           \________/             \________/
+		    Operands               Operands
+
+	Often there are comma separated letters or 0/1 values after the first
+	operand, which tell the instruction what bank of memory to use, and what
+	the destination for resulting values should go (W=WREG, F="File" Memory).
+
 	Example:
 
 	    DECF   my_var,W,A
 	                  | |
 			  | Access bit: can be B(BSR Bank) or A(Access Bank)
-			  Destination bit: can be F(File) or W(WREG)
+			  Destination bit: can be F("File" memory) or W(WREG)
+
+	The WREG is considered the general "accumulator" register.
 
 	The F/W "destination" and B/A "access" letters are really MACROS 
 	that resolve to 0 or 1 values.
@@ -111,6 +136,16 @@ PIC INSTRUCTION FORMAT
 	"Special Functions Registers") So with the Access Bank selected, one can access
 	both low memory variables AND the Special Function Registers, without having to
 	switch banks.
+
+	OK, then there's bit testing things like the STATUS register, which uses
+	some different UPPERCASE macros:
+
+	    BTFSS    STATUS,0,C
+	                |   | |__ C="Carry" (can be Z, C, DC, OV)
+			|   |
+	                |   |____ 0=Access bank (STATUS is an address within the Access bank) (Could also be "A" instead of "0")
+			|
+	                |________ STATUS is an address to the SFR (Special Function Register) "Status" register
 
     Data Memory:
 
