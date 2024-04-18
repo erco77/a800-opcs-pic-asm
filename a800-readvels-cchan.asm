@@ -8,7 +8,7 @@
     ;    #    #
     ;     ####
     ;
-    ;   case 22: // await lsb chan 'C'
+    ;   case 13: // await lsb chan 'C'
     ;       if ( is_strobe ) {            // STROBE from PC?
     ;           lsb       = IBMPC_DATA;
     ;           IBMPC_ACK = 1;            // ack lsb
@@ -21,18 +21,18 @@
     ;
 
     ;
-    ; CASE 22
+    ; CASE 13
     ;
 
-rv_case_22:
+rv_state_13:
     ;                                   ;   Cycles
     ;                                   ; -----------
     ;                                   ; !SKIP  SKIP
     btfsc       rv_is_stb,0             ;   1     3  ; strobe? skip if clear..
-    goto        rv22_is_stb             ;   2     |  ; is_strobe?
-    goto        rv22_not_is_stb         ;   |     2  ; ! is_strobe?
+    goto        rv13_is_stb             ;   2     |  ; is_strobe?
+    goto        rv13_not_is_stb         ;   |     2  ; ! is_strobe?
                                         ;   |     |
-rv22_not_is_stb:
+rv13_not_is_stb:
     ; No strobe yet? wait for it
     nop                                 ;   |     1
     bcf         IBMPC_ACK_BIT           ;   |     1
@@ -40,7 +40,7 @@ rv22_not_is_stb:
     nop                                 ;   |     1  ; DONT advance state
     return                              ;   |   -----
                                         ;   |     9
-rv22_is_stb:
+rv13_is_stb:
     nop                                 ;   1     |
     ; // check if host lowered STROBE and START
     movff       IBMPC_DATA,rv_lsb       ;   2     |  ; bus data -> LSB
@@ -50,18 +50,18 @@ rv22_is_stb:
     return                              ; ----- -----
                                         ;   9     9   <-- execution symmetry
     ;
-    ; CASE 23
+    ; CASE 14
     ;
 
-rv_case_23:
+rv_state_14:
     ;                                   ;   Cycles
     ;                                   ; -----------
     ;                                   ; !SKIP  SKIP
     btfsc       rv_is_stb,0             ;   1     3  ; strobe? skip if clear..
-    goto        rv23_is_stb             ;   2     |  ; is_strobe?
-    goto        rv23_not_is_stb         ;   |     2  ; ! is_strobe?
+    goto        rv14_is_stb             ;   2     |  ; is_strobe?
+    goto        rv14_not_is_stb         ;   |     2  ; ! is_strobe?
                                         ;   |     |
-rv23_not_is_stb:
+rv14_not_is_stb:
     ; PC lowered STROBE (ack recvd)
     nop                                 ;   |     1
     bcf         IBMPC_ACK_BIT           ;   |     1  ; un-ack
@@ -69,7 +69,7 @@ rv23_not_is_stb:
     incf        rv_state                ;   |     1  ; advance state
     return                              ;   |   -----
                                         ;   |     9
-rv23_is_stb:
+rv14_is_stb:
     nop  ; compensate no-skip btfs*     ;   1     |
     nop  ; compensate no-skip btfs*     ;   1     |
     nop                                 ;   1     |
@@ -80,18 +80,18 @@ rv23_is_stb:
                                         ;   9     9   <-- execution symmetry
 
     ;
-    ; CASE 24
+    ; CASE 15
     ;
 
-rv_case_24:
+rv_state_15:
     ;                                   ;   Cycles
     ;                                   ; -----------
     ;                                   ; !SKIP  SKIP
     btfsc       rv_is_stb,0             ;   1     3  ; strobe? skip if clear..
-    goto        rv24_is_stb             ;   2     |  ; is_strobe?
-    goto        rv24_not_is_stb         ;   |     2  ; ! is_strobe?
+    goto        rv15_is_stb             ;   2     |  ; is_strobe?
+    goto        rv15_not_is_stb         ;   |     2  ; ! is_strobe?
                                         ;   |     |
-rv24_not_is_stb:
+rv15_not_is_stb:
     ; No strobe yet? wait for it
     nop                                 ;   |     1
     bcf         IBMPC_ACK_BIT           ;   |     1
@@ -99,7 +99,7 @@ rv24_not_is_stb:
     nop                                 ;   |     1  ; DONT advance state
     return                              ;   |   -----
                                         ;   |     9
-rv24_is_stb:
+rv15_is_stb:
     nop                                 ;   1     |
     ; // check if host lowered STROBE and START
     movff       IBMPC_DATA,rv_msb       ;   2     |  ; bus data -> MSB
@@ -109,18 +109,18 @@ rv24_is_stb:
     return                              ; ----- -----
                                         ;   9     9   <-- execution symmetry
     ;
-    ; CASE 25
+    ; CASE 16
     ;
 
-rv_case_25:
+rv_state_16:
     ;                                   ;   Cycles
     ;                                   ; -----------
     ;                                   ; !SKIP  SKIP
     btfsc       rv_is_stb,0             ;   1     3  ; strobe? skip if clear..
-    goto        rv25_is_stb             ;   2     |  ; is_strobe?
-    goto        rv25_not_is_stb         ;   |     2  ; ! is_strobe?
+    goto        rv16_is_stb             ;   2     |  ; is_strobe?
+    goto        rv16_not_is_stb         ;   |     2  ; ! is_strobe?
                                         ;   |     |
-rv25_not_is_stb:
+rv16_not_is_stb:
     ; PC lowered STROBE (ack recvd)
     nop                                 ;   |     1
     bcf         IBMPC_ACK_BIT           ;   |     1  ; un-ack
@@ -128,7 +128,7 @@ rv25_not_is_stb:
     incf        rv_state                ;   |     1  ; advance state
     return                              ;   |   -----
                                         ;   |     9
-rv25_is_stb:
+rv16_is_stb:
     nop  ; compensate no-skip btfs*     ;   1     |
     nop  ; compensate no-skip btfs*     ;   1     |
     nop                                 ;   1     |
@@ -147,9 +147,9 @@ rv25_is_stb:
     ;         FSR1 -> dirs[G_new_vix], where msb -> FSR1 (dirs)
 
     ;
-    ; CASE 26
+    ; CASE 17
     ;
-rv_case_26:
+rv_state_17:
     ;                                   ; Cycles
     ;                                   ; ------
     nop                                 ;   1

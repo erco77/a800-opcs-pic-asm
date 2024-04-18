@@ -8,33 +8,20 @@ RunMotors:
     ; uchar *vp = &vels[G_run_vix][0];
     ; uchar *dp = &dirs[G_run_vix][0];
     ; uchar *p  = &pos[0];
-    banksel vels
+    ;
+    banksel vels		; select bank that vels[]/dirs[]/pos[] are in
     lfsr        FSR0,vels
     lfsr        FSR1,dirs
     lfsr        FSR2,pos
-    movlw       4               ; offset for FSR0/1 if G_run_vix == 1
-
-    ;; XXX:  THESE BRANCH INSTRUCTIONS AFFECT EXECUTION TIME
-    ;;       Should they be broken out for symmetry timing?
-    ;;
-    ;;       And hmm, why not just have the G_run_vix values
-    ;;       alternate between zero and 4 so the value can simply
-    ;;       be added to FSR0 without the conditional? Everything
-    ;;       is in the same bank anyway, so FSR1L will always be
-    ;;       constant, and not wrap bank boundaries.
-    ;;
-    btfsc       G_run_vix,0
-    addwf       FSR0L           ; FSR0 += 4 if G_run_vix set
-    btfsc       G_run_vix,0
-    addwf       FSR1L           ; FSR1 += 4 if G_run_vix set
+    movf        G_run_vix,W	; get current G_run_vix offset (0 or 4)
+    addwf       FSR0L           ; add it to FSR0L vels[] index -- assume no carry; all indexing within bank
+    addwf       FSR1L           ; add it to FSR1L dirs[] index -- assume no carry; all indexing within bank
     ; FSR2 is not indexed by G_run_vix, so no need to adjust it
 
     ; At this point:
-    ;     FSR0 points to vels[G_run_vix] 8bit
-    ;     FSR1 points to dirs[G_run_vix] 8bit
-    ;     FSR2 points to pos[c]         16bit
-    ;
-
+    ;     FSR0 points to vels[G_run_vix][0] (byte)
+    ;     FSR1 points to dirs[G_run_vix][0] (byte)
+    ;     FSR2 points to pos[0]          (word)
 
     ;
     ; Now loop through channels ABCD (0 - 3) doing the following:
@@ -252,10 +239,10 @@ rm_got_vels_if:               ;   |       |       |
     ; G_freq = 0;
     clrf    G_freq+0            ;   1     |  \__ 16bit
     clrf    G_freq+1            ;   1     |  /   ushort
-    ; G_run_vix ^= 1;           ;   |     |       |
-    ; G_new_vix ^= 1;           ;   |     |       |
-    movlw   0x01                ;   1     |       |
-    xorwf   G_run_vix,F         ;   1     |       |
+    ; G_run_vix ^= 4;           ;   |     |       |
+    ; G_new_vix ^= 4;           ;   |     |       |
+    movlw   0x04                ;   1     |       |
+    xorwf   G_run_vix,F         ;   1     |       |   ; swap run/new vix each IRQ tick
     xorwf   G_new_vix,F         ;   1     |       |
                                 ;   |     |       |
     ; G_got_vels = 0;           ;   |     |       |

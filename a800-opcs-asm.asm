@@ -179,12 +179,43 @@ my_vars         udata 0x80      ; unitialized data (we init in main)
 
 ; NOTE: Put arrays low in memory to keep them away from bank boundaries.
 ;       This lets us take advantage of one-byte indexing.
-
+	 
+; Motor vel[] and dir[] arrays.
+;     Conceptually these are 2-dimensional arrays, but for efficiency in assembly
+;     we handled them as one dimensional arrays with two indexes; a vix and a chan index.
+;
+;     The FIRST  4 bytes are the A/B/C/D channel vels currently running the motors.
+;     The SECOND 4 bytes are the A/B/C/D channel vels in the process of being loaded from the IBMPC.
+;
+;     Initially G_run_vix=0 points to the first set of 4 channel values,
+;     and G_new_vix=4 points to the second set of 4 channel values, e.g.
+;     
+;          Byte
+;          Offset  Value
+;          ------  -------                                  --.
+;          0000    db 0x00   ; A         <-- G_run_vix = 0    |
+;          0001    db 0x00   ; B                              |__ Current "run" vels
+;          0002    db 0x00   ; C                              |
+;          0003    db 0x00   ; D                            --`
+;          0004    db 0x00   ; A         <-- G_new_vix = 4  --.
+;          0005    db 0x00   ; B                              |__ Current "new" vels
+;          0006    db 0x00   ; C                              |
+;          0007    db 0x00   ; D                            --`
+;
+;     When an IRQ tick passes, and new vels were successfully received from the IBMPC,
+;     the two "vix" index values are both XOR'ed with 4, flipping them to opposite values,
+;     such that ReadVels() uses the G_new_vix index to load the new vels while the G_run_vix
+;     index is used by RunMotors().
+;
+;     For efficiency in assembly we treat vels[] and dirs[] as 1-dimensional byte arrays
+;     with byte offset indexes, but in C, these would be a pair of 2-dimensional arrays, e.g.
+;
 ; uchar vels[2][MAXCHANS];       // 2x4 array of 8bit velocities sent from IBM PC
 ; uchar dirs[2][MAXCHANS];       // 2x4 array of 8bit velocities sent from IBM PC
-vels            res (2*MAXCHANS) ; vel+0=A, vel+1=B,vel+2=C,vel+3=D : vel+4=A(vix) vel+5=B(vix)..
-dirs            res (2*MAXCHANS) ; dir+0=A..
-
+;
+vels            res (2*MAXCHANS)
+dirs            res (2*MAXCHANS)
+	    
 ; 16 bit position array, one 16bit value per channel.
 ;
 ;     ushort pos[MAXCHANS];
@@ -196,11 +227,24 @@ dirs            res (2*MAXCHANS) ; dir+0=A..
 ;
 pos             res (2*MAXCHANS)
 
-; Run index (either 0 or 1) for vels[] and dirs[] above:
-;   vels[G_run_vix][chan], dirs[G_run_vix][chan]
+; G_run_vix / G_new_vix
+; These byte indexes described above in the vels[]/dirs[] arrays.
+; These values are either 0 or 4, being opposite values of the other.
 ;
-G_run_vix       res 1       ; 0|1 index for vels[ix][chan] and dirs[ix][chan]
-G_new_vix       res 1       ; index for new vels from IBMPC (opposite of G_run_vix's value)
+;       > When G_run_vix is 0, then G_new_vix must be 4
+;                           ^                         ^
+;                            \__________  ___________/
+;                                       \/              <-- on each IRQ, these values are swapped
+;                             __________/\___________
+;                            /                       \
+;                           v                         v
+;       > When G_run_vix is 4, then G_new_vix must be 0
+;
+; This ensured new vels coming in from the IBMPC are buffered until the next IRQ tick
+; when they're switched into use.
+;
+G_run_vix       res 1           ; index into vels[] and dirs[] for actively running the motors
+G_new_vix       res 1           ; index into vels[] and dirs[] for loading velocities from IBMPC
 
 G_maxfreq       res 2           ; MAXFREQ as a memory constant (for SUBWF)
 G_maxfreq2      res 2           ; MAXFREQ divided by 2 (used to init pos[] each iter)
@@ -240,13 +284,13 @@ rv_lsb          res 1           ; lsb of data from IBMPC
 rv_msb          res 1           ; msb of data from IBMPC
 rv_is_stb       res 1           ; byte snapshot of IS_STROBE
 rv_is_svel_stb  res 1           ; byte snapshot of IS_VEL_AND_STROBE
-rv_velptr       res 1           ; ptr to vels[G_new_vix]
-rv_dirptr       res 1           ; ptr to dirs[G_new_vix]
-rv_msb_dir      res 1           ; =1 if hi bit of msb set
+;;DELETEME UNUSED rv_velptr       res 1           ; ptr to vels[G_new_vix]
+;;DELETEME UNUSED rv_dirptr       res 1           ; ptr to dirs[G_new_vix]
+;;DELETEME UNUSED rv_msb_dir      res 1           ; =1 if hi bit of msb set
 
 ; Flag to indicate when PC has finished sending us new vels
 ; so next IRQ can swap G_run_vix/G_new_vix and start using new vels.
-G_got_vels      res 1       ; flag indicating if IBMPC finished sending us vels
+G_got_vels      res 1           ; flag indicating if IBMPC finished sending us vels
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; USEFUL MACROS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -310,14 +354,24 @@ START:
     clrf    G_freq+1
 
     ; G_run_vix = 0;  \_ must always be
-    ; G_new_vix = 1;  /  opposite values
+    ; G_new_vix = 4;  /  opposite values
     movlw   0x00
     movwf   G_run_vix
-    movlw   0x01
+    movlw   0x04
     movwf   G_new_vix
 
     ; G_got_vels = 0;
     clrf    G_got_vels
+
+    ; rv_state    = 0;
+    ; rv_state_x4 = 0;
+    movlw   0x00
+    movwf   rv_state
+    movwf   rv_state_x4
+
+    ;;
+    ;; Variables needing a chan loop for initialization
+    ;;
 
     ; for ( c=0; c<MAXCHANS; c++ ) { vels[0] = 0; dirs[0] = 0; pos[c] = (MAXFREQ/2); }
     lfsr  FSR0,vels
@@ -325,9 +379,6 @@ START:
     lfsr  FSR2,pos
     movlw 0
 
-    ;;
-    ;; Variables needing a chan loop for initialization
-    ;;
 main_initpos_loop:
     ; zero out uchar vels[2][MAXCHANS]
     clrf    POSTINC0                 ; vels[0][chan] = 0;
@@ -398,8 +449,6 @@ main_initpos_loop:
 #endif
 
 main_loop:
-    CLRWDT                      ; Clear Watchdog Timer
-
     ; // Buffer ports with inputs
     ; G_porta = PORTA;     // port A is mix of in and out
     movff   PORTA,G_porta
@@ -433,5 +482,16 @@ main_loop:
 ;;    incf    (vels+0),1
 ;;    goto    main_loop
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    ;; TESTING ONLY -- Exercise the various states of ReadVels() to check timing
+    movlw   1		; 0..23
+    movwf   rv_state
+    rlncf   WREG,W	; \__ WREG = WREG * 4
+    rlncf   WREG,W	; /
+    movwf   rv_state_x4
+    call    ReadVels
+    nop
+    nop
+    nop
 
     END
