@@ -177,31 +177,32 @@
     stepper motor drivers like the Gecko 201X and Centent CNO-142/143.
 
 
-       IBMP PC                      OPCS A800 ISA CARD
-      _________    #######################################################
-     |         |   #                                                     #
-     |         |   #                                                     #
-     |         |   #                                                 ,---#--> Motor A steps
-     |    IRQ5 |<--#----------------------------------------.        |---#--> Motor A dir
-     |         |   #                                   _____|____    |---#--> Motor B steps
-     |         |   #                                  |          |   |---#--> Motor B dir
-     |         |   #         8255 PPI            ,--->| PIC CPU1 |---+---#--> Motor C steps
-     |         |   #     ___________________     |    |__________|   |---#--> Motor C dir
-     |         |   #    |                   |    |                   |---#--> Motor D steps
-     |   0x300 |---#--->| 0x0300    PORT A  |----|                   `---#--> Motor D dir
-     |   0x301 |---#--->| 0x0301    PORT B  |----|                       #
-     |   0x302 |---#--->| 0x0302    PORT C  |----|                   ,---#--> Motor E steps
-     |   0x303 |---#--->| 0x0303 CTRL WORD  |    |                   |---#--> Motor E dir
-     |         |   #    |                   |    |     __________    |---#--> Motor F steps
-     |         |   #    |___________________|    |    |          |   |---#--> Motor F dir
-     |_________|   #                             `--->| PIC CPU2 |---+---#--> Motor G steps
-                   #                                  |__________|   |---#--> Motor G dir
-                   #                                                 |---#--> Motor H steps
-                   #                                                 `---#--> Motor H dir
-                   #                                                     #
-                   #######################################################
+       IBMP PC                          OPCS A800 ISA CARD
+      _________         #######################################################
+     |         |        #                                                     #
+     |         |        #                                                     #
+     |         |        #                                                 ,---#--> Motor A steps
+     |    IRQ5 |<-------#----------------------------------------.        |---#--> Motor A dir
+     |         |        #                                   _____|____    |---#--> Motor B steps
+     |         |        #                                  |          |   |---#--> Motor B dir
+     |         |        #         8255 PPI            ,--->| PIC CPU1 |---+---#--> Motor C steps
+     |         |        #     ___________________     |    |__________|   |---#--> Motor C dir
+     |         |        #    |                   |    |                   |---#--> Motor D steps
+     |   0x300 |--/8/---#--->| 0x0300    PORT A  |----|                   `---#--> Motor D dir
+     |   0x301 |--/8/---#--->| 0x0301    PORT B  |----|                       #
+     |   0x302 |--/8/---#--->| 0x0302    PORT C  |----|                   ,---#--> Motor E steps
+     |   0x303 |--/8/---#--->| 0x0303 CTRL WORD  |    |                   |---#--> Motor E dir
+     |         |        #    |                   |    |     __________    |---#--> Motor F steps
+     |         |        #    |___________________|    |    |          |   |---#--> Motor F dir
+     |_________|        #                             `--->| PIC CPU2 |---+---#--> Motor G steps
+                        #                                  |__________|   |---#--> Motor G dir
+                        #                                                 |---#--> Motor H steps
+                        #                                                 `---#--> Motor H dir
+                        #                                                     #
+                        #######################################################
 
-
+          NOTE: /8/ means a 8 bits data going through the specified port/control word.
+    
     How does the PC use this A800 card to run a motor?
     --------------------------------------------------
 
