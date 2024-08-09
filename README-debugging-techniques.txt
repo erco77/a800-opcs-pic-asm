@@ -248,9 +248,7 @@ RETURNING TO PROGRAMMING CHIPS
             ;;     Use this when debugging chip /without/ A800 board, i.e. running on the proto board.
             ;;
               CONFIG  RSTOSC = HFINTOSC_64MHZ ; Power-up default value for COSC bits (HFINTOSC with HFFRQ = 64 MHz
-             .___
-             |\
-             | \___ Uncommented this to use internal oscillator
+              🡬 Uncommented this to use internal oscillator
 
 
             ;; *** EXTERNAL CRYSTAL OSCILLATOR ***
@@ -258,9 +256,7 @@ RETURNING TO PROGRAMMING CHIPS
             ;;     using common crystal locked timing across both processors.
             ;;
             ; CONFIG  RSTOSC = EXTOSC_4PLL    ; Power-up default value for COSC bits (HFINTOSC with HFFRQ = 64 MHz
-             .___
-             |\
-             | \___ Commented this out, as this only works with the A800 board
+             🡬 Commented this out, as this only works with the A800 board
 
           """
 
