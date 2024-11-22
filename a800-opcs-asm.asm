@@ -2,13 +2,39 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; TITLE - A800 - REV A1 FIRMWARE
+; TITLE - A800 - REV-B2 FIRMWARE
 ;
 ;         To be programmed on CPU1 and CPU2 of the OPCS A800 stepper drive card.
 ;         Build environment: MPLABX 5.25 / MPASM 5.84 / WINDOWS 7
 ;
-;             REV A: IRQ FREQUENCY IS 107Hz
-;             REV B: IRQ FREQUENCY IS 120Hz  (119.636Hz)
+;             REV  A: IRQ FREQUENCY IS 107Hz
+;             REV B2: IRQ FREQUENCY IS 120Hz  (119.636Hz)
+;
+; --- REVISIONS -----------------------------------------------
+;
+;    REV-B2 - "CURRENT" 
+;       BUG FIX - fix vel instabilities for 0xD6 and around 0xEC and range 0xFD..0xFF.
+;       ** Suggest all a800 pic chips be upgraded to fix this **
+;       Bug due to multi-byte integer substraction of G_maxfreq not handling
+;       carry properly (see commit dd84581, a800-runmotors.asm). Noticed this issue
+;       when first testing Fotokem IMAX printer's special NextStep 10,000 PPR drives,
+;       and needed the higher speeds. (Not really seen with 2,000 PPR drives)
+;
+;       > Removed unused variables (rv_velptr,rv_dirptr,rv_msb_dir)
+;       > Removed unneeded CLRWDT from main loop (config handles this)
+;       > Renumbered state machine cases, inline docs adjusted:
+;	  o Renamed all ReadVels() cases to monotonic values
+;	  o Fixed ReadVel() timing issues
+;	> RunMotors() and ReadVels():
+;	  o Simplify handling of G_run_vix/G_new_vix indexing
+;	  o Simplify stb/svel bit testing
+;	> Rechecked timings in ReadVels() -- see "CHECKED: <date>"
+;	> Changed all state names from "rv_case_#" -> rv_state_##"
+;       > Adjusted timing/nops.
+;       > IRQ rate increased from 107Hz -> 120Hz
+;
+;    REV-A1 - ..tbd..
+;    REV-A  - ..tbd..
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -24,11 +50,12 @@
 #include "a800-config-production.asm"
 #endif
 
-; MAXFREQ   IRQ RATE
-; -------   --------
-; .512      62 Hz
-; .300      106.7 Hz
-; .256      122 Hz
+;           REV A*    REV B*
+; MAXFREQ   IRQ RATE  IRQ RATE
+; -------   --------  --------
+; .512      62 Hz     ?
+; .300      106.7 Hz  119.6 Hz
+; .256      122 Hz    ?
 ;
 MAXFREQ     equ .300    ; max frequency count for main iters (300)
 MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
