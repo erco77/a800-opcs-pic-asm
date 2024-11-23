@@ -31,7 +31,7 @@ ReadVels:
     ; of either 0 or 4 (MAXCHANS). Let's assume FSR0/FSR1 point
     ; *within bank* to avoid 16 bit indexing, so just adjust FSR0L/1L
     ;
-    movf        G_new_vix,W	; get current G_new_vix offset (0 or 4)
+    movf        G_new_vix,W     ; get current G_new_vix offset (0 or 4)
     addwf       FSR0L           ; add it to FSR0L vels[] index -- assume no carry; all indexing within bank
     addwf       FSR1L           ; add it to FSR1L dirs[] index -- assume no carry; all indexing within bank
 

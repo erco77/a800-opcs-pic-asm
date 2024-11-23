@@ -23,13 +23,13 @@
 ;       > Removed unused variables (rv_velptr,rv_dirptr,rv_msb_dir)
 ;       > Removed unneeded CLRWDT from main loop (config handles this)
 ;       > Renumbered state machine cases, inline docs adjusted:
-;	  o Renamed all ReadVels() cases to monotonic values
-;	  o Fixed ReadVel() timing issues
-;	> RunMotors() and ReadVels():
-;	  o Simplify handling of G_run_vix/G_new_vix indexing
-;	  o Simplify stb/svel bit testing
-;	> Rechecked timings in ReadVels() -- see "CHECKED: <date>"
-;	> Changed all state names from "rv_case_#" -> rv_state_##"
+;         o Renamed all ReadVels() cases to monotonic values
+;         o Fixed ReadVel() timing issues
+;       > RunMotors() and ReadVels():
+;         o Simplify handling of G_run_vix/G_new_vix indexing
+;         o Simplify stb/svel bit testing
+;       > Rechecked timings in ReadVels() -- see "CHECKED: <date>"
+;       > Changed all state names from "rv_case_#" -> rv_state_##"
 ;       > Adjusted timing/nops.
 ;       > IRQ rate increased from 107Hz -> 120Hz
 ;
@@ -206,7 +206,7 @@ my_vars         udata 0x80      ; unitialized data (we init in main)
 
 ; NOTE: Put arrays low in memory to keep them away from bank boundaries.
 ;       This lets us take advantage of one-byte indexing.
-	 
+         
 ; Motor vel[] and dir[] arrays.
 ;     Conceptually these are 2-dimensional arrays, but for efficiency in assembly
 ;     we handled them as one dimensional arrays with two indexes; a vix and a chan index.
@@ -242,7 +242,7 @@ my_vars         udata 0x80      ; unitialized data (we init in main)
 ;
 vels            res (2*MAXCHANS)
 dirs            res (2*MAXCHANS)
-	    
+            
 ; 16 bit position array, one 16bit value per channel.
 ;
 ;     ushort pos[MAXCHANS];
@@ -311,9 +311,6 @@ rv_lsb          res 1           ; lsb of data from IBMPC
 rv_msb          res 1           ; msb of data from IBMPC
 rv_is_stb       res 1           ; byte snapshot of IS_STROBE
 rv_is_svel_stb  res 1           ; byte snapshot of IS_VEL_AND_STROBE
-;;DELETEME UNUSED rv_velptr       res 1           ; ptr to vels[G_new_vix]
-;;DELETEME UNUSED rv_dirptr       res 1           ; ptr to dirs[G_new_vix]
-;;DELETEME UNUSED rv_msb_dir      res 1           ; =1 if hi bit of msb set
 
 ; Flag to indicate when PC has finished sending us new vels
 ; so next IRQ can swap G_run_vix/G_new_vix and start using new vels.
@@ -511,10 +508,10 @@ main_loop:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     ;; TESTING ONLY -- Exercise the various states of ReadVels() to check timing
-    movlw   1		; 0..23
+    movlw   1           ; 0..23
     movwf   rv_state
-    rlncf   WREG,W	; \__ WREG = WREG * 4
-    rlncf   WREG,W	; /
+    rlncf   WREG,W      ; \__ WREG = WREG * 4
+    rlncf   WREG,W      ; /
     movwf   rv_state_x4
     call    ReadVels
     nop
