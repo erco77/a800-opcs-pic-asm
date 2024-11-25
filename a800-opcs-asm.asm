@@ -32,6 +32,9 @@
 ;       > Changed all state names from "rv_case_#" -> rv_state_##"
 ;       > Adjusted timing/nops.
 ;       > IRQ rate increased from 107Hz -> 120Hz
+;       > a800-step.asm: Changed neg logic -> positive logic for step/dir outputs.
+;         PIC output is inverted by 74HCT04, but then inverted /again/
+;         by active LOW of gecko/centent optocouplers (common +5).
 ;
 ;    REV-A1 - ..tbd..
 ;    REV-A  - ..tbd..
@@ -50,12 +53,12 @@
 #include "a800-config-production.asm"
 #endif
 
-;           REV A*    REV B*
-; MAXFREQ   IRQ RATE  IRQ RATE
-; -------   --------  --------
-; .512      62 Hz     ?
-; .300      106.7 Hz  119.6 Hz
-; .256      122 Hz    ?
+;           REV A*    REV B     REV B2
+; MAXFREQ   IRQ RATE  IRQ RATE  IRQ RATE
+; -------   --------  --------  --------
+; .512      62 Hz     ?         ?
+; .300      106.7 Hz  119.6 Hz  120.0 Hz
+; .256      122 Hz    ?         ?
 ;
 MAXFREQ     equ .300    ; max frequency count for main iters (300)
 MAXCHANS    equ .4      ; total channels (cpu1=ABCD, cpu2=EFGH)
@@ -485,9 +488,9 @@ main_loop:
 
     ; // Clear the step bits here, so they had time to stay high
     ; PORTB |= 0b01010101; // force step bits only, leave dir bits unchanged
-
     movf    LATB,W
-    iorlw   b'01010101'
+    andlw   b'10101010'     ; step bits off, dir bits untouched
+    ;iorlw   b'01010101'    ; OLD: step bits on, dir bits untouched
     movwf   PORTB
 
     ; // Keep motors running with current vels

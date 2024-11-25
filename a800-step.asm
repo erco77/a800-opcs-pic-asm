@@ -13,6 +13,13 @@
 ;         > stp_arg_step - step value        (0x00=no step, 0x01=step)
 ;         > BSR pointing to bank for all A800 variables (e.g. 'banksel stp_arg_step)
 ;
+; NOTE: Step/Direction logic is double-negative logic (postive logic!)
+; because the PIC bit is inverted by the 74HCT04, then inverted *again*
+; because the Gecko/Centent drive optocouplers are active LOW.
+; Which means:
+;       > BCF - turns step drive optocoupler OFF (PIC out=0 -> 7404 out=1 -> opto=off)
+;       > BSF - turns step drive optocoupler ON  (PIC out=1 -> 7404 out=0 -> opto=on)
+;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Step:
@@ -26,26 +33,25 @@ Step:
     ;                           ; --- Cycles ----
     ;                           ; IsChan  NotChan
     ;                           ; ------  -------
-    movlw  0x00                 ;    1       1
+    movlw  0x00                 ;    1       1   ; Is stp_arg_chan == A channel(0)?
     cpfseq stp_arg_chan         ;    3       1   ; Compare File Skip if EQual (CPFSEQ)
-    goto   st_b_chk             ;    |       2   ; !=0: check next chan
+    goto   st_b_chk             ;    |       2   ; !=0: check next chan for symmetry
                                 ; ------  -------
                                 ;    4       4   <-- symmetry
 
     ; G_portb.bits.b0 = val;    ; step?   nostep?
     ;                           ; -----   -------
-    bsf    A_STEP_BIT           ;   1        1   ; assume no step (set=1=hi=gecko led off)
-    btfsc  stp_arg_step,0       ;   1        2   ; Bit Test Skip if Clear: Check bit zero
-    bcf    A_STEP_BIT           ;   1        0   ; Bit Clear File: step=low (Gecko's are ACTIVE LOW)
+    bcf    A_STEP_BIT           ;   1        1   ; Bit Clr File: assume A STEP=off
+    btfsc  stp_arg_step,0       ;   1        2   ; Bit Test Skip if Clear: skip if step not set
+    bsf    A_STEP_BIT           ;   1        0   ; Bit Set File: A STEP=on
                                 ; ------  -------
                                 ;   3        3   <-- symmetry
 
-    ; G_portb.bits.b1 = dir ^ 1; // INVERT: Geckos are *ACTIVE LOW*
-    ;                           ; a_rev    a_fwd
-    ;                           ; -----    -----
-    bsf    A_DIR_BIT            ;   1        1   ; assume dirs[] bit off, make bit hi (hi=fwd)
-    btfsc  stp_arg_dir,7        ;   1        2   ; test bit 7 (0x8000): Is dir bit on (REV)?
-    bcf    A_DIR_BIT            ;   1        0   ; yes, make bit lo (lo=rev)
+    ; G_portb.bits.b1 = dir;    ; a_rev?   a_fwd?
+    ;                           ; ------   ------
+    bcf    A_DIR_BIT            ;   1        1   ; Bit Clr File: assume A DIR=fwd
+    btfsc  stp_arg_dir,7        ;   1        2   ; test bit 7 of hi vel (0x8000): Is dir bit on (REV)?
+    bsf    A_DIR_BIT            ;   1        0   ; A DIR=rev
     goto   st_b_chk             ;   2        2
                                 ; -----    -----
                                 ;   5        5
@@ -56,12 +62,14 @@ st_b_chk:
     movlw  0x01
     cpfseq stp_arg_chan
     goto   st_c_chk
-    bsf    B_STEP_BIT
-    btfsc  stp_arg_step,0
+
     bcf    B_STEP_BIT
-    bsf    B_DIR_BIT
-    btfsc  stp_arg_dir,7
+    btfsc  stp_arg_step,0
+    bsf    B_STEP_BIT
+
     bcf    B_DIR_BIT
+    btfsc  stp_arg_dir,7
+    bsf    B_DIR_BIT
     goto   st_c_chk
 ;
 ; C channel
@@ -70,12 +78,14 @@ st_c_chk:
     movlw  0x02
     cpfseq stp_arg_chan
     goto   st_d_chk
-    bsf    C_STEP_BIT
-    btfsc  stp_arg_step,0
+
     bcf    C_STEP_BIT
-    bsf    C_DIR_BIT
-    btfsc  stp_arg_dir,7
+    btfsc  stp_arg_step,0
+    bsf    C_STEP_BIT
+
     bcf    C_DIR_BIT
+    btfsc  stp_arg_dir,7
+    bsf    C_DIR_BIT
     goto   st_d_chk
 ;
 ; D channel
@@ -84,12 +94,14 @@ st_d_chk:
     movlw  0x03
     cpfseq stp_arg_chan
     goto   st_done
-    bsf    D_STEP_BIT
-    btfsc  stp_arg_step,0
+
     bcf    D_STEP_BIT
-    bsf    D_DIR_BIT
-    btfsc  stp_arg_dir,7
+    btfsc  stp_arg_step,0
+    bsf    D_STEP_BIT
+
     bcf    D_DIR_BIT
+    btfsc  stp_arg_dir,7
+    bsf    D_DIR_BIT
     goto   st_done
 
 st_done:
